@@ -999,19 +999,49 @@ function closeTocDrawer(){$('#toc').classList.remove('open');}
 /* スクロール連動: 現在表示中カテゴリのハイライト＋学習ビューのスクロール位置保存 */
 let scrollTick=false, _scrollSaveTimer=null, learnRestored=false;
 function curScrollY(){return window.scrollY||window.pageYOffset||document.documentElement.scrollTop||0;}
+/* 画面最上部にあるカード（用語/カテゴリ）を記録しておくと、再読み込み後にレイアウトが多少変わっても正確に戻せる */
+function captureLearnAnchor(){
+  const cards=$$('#contentArea details[data-term],#contentArea details[data-cat]');
+  let best=null,bestTop=-1e9;
+  for(const d of cards){
+    if(d.classList.contains('hidden'))continue;
+    const top=d.getBoundingClientRect().top;
+    if(top<=6&&top>bestTop){bestTop=top;best=d;}
+  }
+  if(best){DB.ui.anchor=best.dataset.term||best.dataset.cat;DB.ui.anchorOff=Math.round(bestTop);}
+  else{DB.ui.anchor=null;DB.ui.anchorOff=0;}
+}
 function saveLearnScroll(){
   clearTimeout(_scrollSaveTimer);
-  _scrollSaveTimer=setTimeout(()=>{DB.ui.scrollY=curScrollY();saveUI();},200);
+  _scrollSaveTimer=setTimeout(()=>{DB.ui.scrollY=curScrollY();captureLearnAnchor();saveUI();},200);
+}
+function targetScrollY(){
+  if(DB.ui.anchor){
+    const el=$('#term-'+DB.ui.anchor)||$('#cat-'+DB.ui.anchor);
+    if(el)return Math.max(0,curScrollY()+el.getBoundingClientRect().top-(DB.ui.anchorOff||0));
+  }
+  return DB.ui.scrollY||0;
 }
 function restoreLearnScroll(){
-  const y=DB.ui.scrollY||0;
-  if(y<=2)return;
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    try{window.scrollTo({top:y,left:0,behavior:'instant'});}catch(e){window.scrollTo(0,y);}
-  }));
+  if(!DB.ui.anchor&&(DB.ui.scrollY||0)<=2)return;
+  let cancelled=false,iv=null;
+  const stop=()=>{cancelled=true;if(iv)clearInterval(iv);};
+  ['touchstart','wheel','keydown','pointerdown'].forEach(ev=>window.addEventListener(ev,stop,{once:true,passive:true}));
+  const doScroll=()=>{
+    if(cancelled)return;
+    const y=targetScrollY();
+    if(Math.abs(curScrollY()-y)>2){try{window.scrollTo({top:y,left:0,behavior:'instant'});}catch(e){window.scrollTo(0,y);}}
+  };
+  /* レイアウト確定・フォント適用・画像描画で高さが変わっても追随できるよう、短時間くり返し復元する */
+  doScroll();
+  requestAnimationFrame(()=>requestAnimationFrame(doScroll));
+  iv=setInterval(doScroll,120);
+  setTimeout(stop,1400);
+  window.addEventListener('load',doScroll,{once:true});
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(doScroll).catch(()=>{});}
 }
 function flushUI(){
-  if($('#view-learn')&&$('#view-learn').classList.contains('on'))DB.ui.scrollY=curScrollY();
+  if($('#view-learn')&&$('#view-learn').classList.contains('on')){DB.ui.scrollY=curScrollY();captureLearnAnchor();}
   saveUI();
 }
 window.addEventListener('scroll',()=>{
@@ -1026,6 +1056,7 @@ window.addEventListener('scroll',()=>{
   });
 });
 window.addEventListener('pagehide',flushUI);
+window.addEventListener('beforeunload',flushUI);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushUI();});
 
 /* 検索 */
@@ -1842,7 +1873,7 @@ function safeSetHash(name){
   catch(e){hashSyncOK=false;}
 }
 function switchView(name){
-  if($('#view-learn')&&$('#view-learn').classList.contains('on'))DB.ui.scrollY=curScrollY(); /* 学習から離れる直前の位置を確保 */
+  if($('#view-learn')&&$('#view-learn').classList.contains('on')){DB.ui.scrollY=curScrollY();captureLearnAnchor();} /* 学習から離れる直前の位置を確保 */
   $$('.view').forEach(v=>v.classList.remove('on'));
   const target=$('#view-'+name)||$('#view-learn');
   target.classList.add('on');
@@ -1888,6 +1919,7 @@ function bindUI(){
   });
 }
 function boot(){
+  try{if('scrollRestoration' in history)history.scrollRestoration='manual';}catch(e){} /* 標準の自動復元を切り、自前の復元と競合させない */
   initDB();applyTheme();bindUI();bindSettings();
   renderAll();
   const valid=['learn','quiz','review','settings'];

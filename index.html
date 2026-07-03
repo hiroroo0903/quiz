@@ -121,8 +121,8 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
 .term-body{padding:2px 4px 16px 23px}
 .term-def{white-space:pre-wrap}
 .kv-label{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--accent-ink);background:var(--accent-soft);border-radius:5px;padding:1px 8px;margin:10px 0 4px}
-.formula{font-family:var(--mono);font-size:14.5px;background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:8px;padding:10px 14px;margin:4px 0;white-space:pre-wrap;line-height:2}
-.pycode{font-family:var(--mono);font-size:13.5px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:4px 0;white-space:pre-wrap}
+.formula{font-family:var(--mono);font-size:14.5px;background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:8px;padding:10px 14px;margin:4px 0;white-space:pre-wrap;line-height:2;overflow-x:auto}
+.pycode{font-family:var(--mono);font-size:13.5px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:4px 0;white-space:pre-wrap;overflow-x:auto}
 .note-box{background:var(--warn-soft);border-left:3px solid var(--warn);border-radius:0 8px 8px 0;padding:8px 14px;margin:8px 0;font-size:14.5px;white-space:pre-wrap}
 .fig-box{margin:12px 0 4px;text-align:center}
 .fig-box svg{max-width:100%;height:auto}
@@ -151,9 +151,10 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
 .q-count{font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums}
 .q-card{padding:24px 26px}
 .q-src{display:flex;gap:6px;margin-bottom:10px}
-.q-text{font-size:17.5px;font-weight:600;line-height:1.9;white-space:pre-wrap;margin-bottom:18px}
+.q-text{font-size:17.5px;font-weight:600;line-height:1.9;white-space:pre-wrap;margin-bottom:18px;overflow-wrap:anywhere}
 .choices{display:grid;gap:9px}
-.choice{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:9px;padding:12px 15px;font-size:15px;line-height:1.7;display:flex;gap:11px;align-items:flex-start;transition:border-color .12s,background .12s}
+.choice{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:9px;padding:12px 15px;font-size:15px;line-height:1.7;display:flex;gap:11px;align-items:flex-start;transition:border-color .12s,background .12s;overflow-wrap:anywhere}
+.choice>span:last-child{flex:1;min-width:0}
 .choice:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
 .choice .ab{font-family:var(--serif);font-weight:700;color:var(--accent);flex-shrink:0}
 .choice.correct{border-color:var(--ok);background:var(--ok-soft)}
@@ -162,10 +163,10 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
 .judge{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;margin:18px 0 8px}
 .judge.ok{color:var(--ok)}.judge.ng{color:var(--ng)}
 .judge svg{width:24px;height:24px}
-.expl-box{background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:14px 16px;font-size:14.5px;white-space:pre-wrap}
+.expl-box{background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:14px 16px;font-size:14.5px;white-space:pre-wrap;overflow-wrap:anywhere}
 .expl-term{margin-top:10px;border-top:1px dashed var(--line2);padding-top:10px}
 .expl-term b{font-size:15px}
-.written-ans{background:var(--ok-soft);border:1px solid var(--ok);border-radius:9px;padding:13px 16px;margin:14px 0;white-space:pre-wrap}
+.written-ans{background:var(--ok-soft);border:1px solid var(--ok);border-radius:9px;padding:13px 16px;margin:14px 0;white-space:pre-wrap;overflow-wrap:anywhere}
 .selfgrade{display:flex;gap:10px;margin-top:14px}
 .q-foot{display:flex;justify-content:flex-end;margin-top:18px;gap:10px}
 .result-num{font-family:var(--serif);font-size:52px;font-weight:700;text-align:center;letter-spacing:.02em}
@@ -786,11 +787,11 @@ function fmtDef(raw,kps){
 }
 
 /* ==================== ストレージ ==================== */
-const LS={contents:'mlstudy.contents',quizzes:'mlstudy.quizzes',weak:'mlstudy.weak',stats:'mlstudy.stats',settings:'mlstudy.settings',pool:'mlstudy.pool'};
+const LS={contents:'mlstudy.contents',quizzes:'mlstudy.quizzes',weak:'mlstudy.weak',stats:'mlstudy.stats',settings:'mlstudy.settings',pool:'mlstudy.pool',ui:'mlstudy.ui'};
 function load(key,fallback){try{const v=localStorage.getItem(key);return v?JSON.parse(v):fallback;}catch(e){return fallback;}}
 function save(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){toast('保存に失敗しました（容量不足の可能性）',true);}}
 
-let DB={contents:null,quizzes:null,weak:null,stats:null,settings:null,pool:null};
+let DB={contents:null,quizzes:null,weak:null,stats:null,settings:null,pool:null,ui:null};
 function initDB(){
   DB.contents=load(LS.contents,null);
   if(!DB.contents){DB.contents=seedContents();save(LS.contents,DB.contents);}
@@ -800,6 +801,8 @@ function initDB(){
   DB.stats=load(LS.stats,{sessions:[],terms:{}});
   DB.settings=Object.assign({theme:'auto',apiKey:'',model:'gemini-2.5-flash',useGemini:true},load(LS.settings,{}));
   DB.pool=load(LS.pool,{});
+  DB.ui=load(LS.ui,{scrollY:0,open:{},view:'learn'});
+  if(!DB.ui.open)DB.ui.open={};
 }
 const saveContents=()=>save(LS.contents,DB.contents);
 const saveQuizzes=()=>save(LS.quizzes,DB.quizzes);
@@ -807,6 +810,9 @@ const saveWeak=()=>save(LS.weak,DB.weak);
 const saveStats=()=>save(LS.stats,DB.stats);
 const saveSettings=()=>save(LS.settings,DB.settings);
 const savePool=()=>save(LS.pool,DB.pool);
+const saveUI=()=>save(LS.ui,DB.ui);
+let _uiTimer=null;
+function saveUISoon(){clearTimeout(_uiTimer);_uiTimer=setTimeout(saveUI,250);}
 
 const getCat=id=>DB.contents.categories.find(c=>c.id===id);
 const getTerm=id=>DB.contents.terms.find(t=>t.id===id);
@@ -915,6 +921,16 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#modalRoot').chi
 const CARET='<svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
 const TCARET='<svg class="tcaret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 18l6-6-6-6"/></svg>';
 
+function isOpen(id){return DB.ui.open[id]!==false;}
+function bindLearnToggles(){
+  $$('#contentArea details[data-cat],#contentArea details[data-term]').forEach(d=>{
+    d.addEventListener('toggle',()=>{
+      if(($('#searchInput').value||'').trim())return; /* 検索中の自動展開は保存しない */
+      DB.ui.open[d.dataset.cat||d.dataset.term]=d.open;
+      saveUISoon();
+    });
+  });
+}
 function renderLearn(){
   renderTOC();
   const area=$('#contentArea');
@@ -922,7 +938,7 @@ function renderLearn(){
   area.innerHTML=cats.map((c,i)=>{
     const ts=termsOf(c.id);
     return `<section class="cat-block" id="cat-${c.id}">
-      <details class="cat" open data-cat="${c.id}">
+      <details class="cat" ${isOpen(c.id)?'open':''} data-cat="${c.id}">
         <summary><span class="cat-no">${String(i+1).padStart(2,'0')}</span><span class="cat-name">${esc(c.name)}</span><span class="cat-meta">${ts.length}件</span>${CARET}</summary>
         <div class="cat-body">
           ${ts.map(t=>renderTermCard(t)).join('')||'<p class="muted" style="padding:10px 4px">この分類にはまだ用語がありません。</p>'}
@@ -936,11 +952,12 @@ function renderLearn(){
     </section>`;
   }).join('')||'<p class="muted">コンテンツがありません。「カテゴリ追加」から始めるか、設定から初期コンテンツを復元してください。</p>';
   applySearch();
+  bindLearnToggles();
 }
 function renderTermCard(t){
   const nq=quizzesOf(t.id).length;
   const fig=t.fig?`<div class="fig-box">${figureFor(t.fig)}</div>`:'';
-  return `<details class="term" open id="term-${t.id}" data-term="${t.id}">
+  return `<details class="term" ${isOpen(t.id)?'open':''} id="term-${t.id}" data-term="${t.id}">
     <summary>${TCARET}<span class="term-name">${esc(t.name)}</span>${nq?`<span class="term-sub">✎ 手動クイズ ${nq}</span>`:''}</summary>
     <div class="term-body">
       <div class="term-def">${fmtDef(t.def,t.kps)}</div>
@@ -979,10 +996,27 @@ function jumpToTerm(id,flash){
 }
 function closeTocDrawer(){$('#toc').classList.remove('open');}
 
-/* スクロール連動: 現在表示中カテゴリのハイライト */
-let scrollTick=false;
+/* スクロール連動: 現在表示中カテゴリのハイライト＋学習ビューのスクロール位置保存 */
+let scrollTick=false, _scrollSaveTimer=null, learnRestored=false;
+function curScrollY(){return window.scrollY||window.pageYOffset||document.documentElement.scrollTop||0;}
+function saveLearnScroll(){
+  clearTimeout(_scrollSaveTimer);
+  _scrollSaveTimer=setTimeout(()=>{DB.ui.scrollY=curScrollY();saveUI();},200);
+}
+function restoreLearnScroll(){
+  const y=DB.ui.scrollY||0;
+  if(y<=2)return;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    try{window.scrollTo({top:y,left:0,behavior:'instant'});}catch(e){window.scrollTo(0,y);}
+  }));
+}
+function flushUI(){
+  if($('#view-learn')&&$('#view-learn').classList.contains('on'))DB.ui.scrollY=curScrollY();
+  saveUI();
+}
 window.addEventListener('scroll',()=>{
   if(!$('#view-learn').classList.contains('on'))return;
+  saveLearnScroll();
   if(scrollTick)return;scrollTick=true;
   requestAnimationFrame(()=>{
     scrollTick=false;
@@ -991,6 +1025,8 @@ window.addEventListener('scroll',()=>{
     $$('.toc-cat').forEach(el=>el.classList.toggle('cur',el.dataset.cat===cur));
   });
 });
+window.addEventListener('pagehide',flushUI);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushUI();});
 
 /* 検索 */
 function applySearch(){
@@ -1806,17 +1842,20 @@ function safeSetHash(name){
   catch(e){hashSyncOK=false;}
 }
 function switchView(name){
+  if($('#view-learn')&&$('#view-learn').classList.contains('on'))DB.ui.scrollY=curScrollY(); /* 学習から離れる直前の位置を確保 */
   $$('.view').forEach(v=>v.classList.remove('on'));
   const target=$('#view-'+name)||$('#view-learn');
   target.classList.add('on');
   $$('.tab').forEach(t=>t.classList.toggle('on',t.dataset.view===name));
   safeSetHash(name);
+  DB.ui.view=name;saveUISoon();
   if(name==='quiz'){
     if(QZ.active){$('#quizSetup').classList.add('hidden');$('#quizStage').classList.remove('hidden');}
     else{$('#quizSetup').classList.remove('hidden');$('#quizStage').classList.add('hidden');renderQuizSetup();}
   }
   if(name==='review')renderReview();
   if(name==='settings')renderSettings();
+  if(name==='learn'&&!learnRestored){learnRestored=true;restoreLearnScroll();} /* リロード後の初回のみ位置を復元 */
 }
 function renderAll(){renderLearn();renderQuizSetup();renderReview();}
 
@@ -1851,8 +1890,10 @@ function bindUI(){
 function boot(){
   initDB();applyTheme();bindUI();bindSettings();
   renderAll();
-  const h=(safeGetHash()||'#learn').slice(1);
-  switchView(['learn','quiz','review','settings'].includes(h)?h:'learn');
+  const valid=['learn','quiz','review','settings'];
+  const h=safeGetHash().slice(1);
+  const start=valid.includes(h)?h:(valid.includes(DB.ui.view)?DB.ui.view:'learn');
+  switchView(start);
 }
 window.addEventListener('hashchange',()=>{
   const h=safeGetHash().slice(1);

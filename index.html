@@ -1013,7 +1013,7 @@ function captureLearnAnchor(){
 }
 function saveLearnScroll(){
   clearTimeout(_scrollSaveTimer);
-  _scrollSaveTimer=setTimeout(()=>{DB.ui.scrollY=curScrollY();captureLearnAnchor();saveUI();},200);
+  _scrollSaveTimer=setTimeout(()=>{DB.ui.scrollY=curScrollY();captureLearnAnchor();saveUI();persistHash();},200);
 }
 function targetScrollY(){
   if(DB.ui.anchor){
@@ -1042,7 +1042,7 @@ function restoreLearnScroll(){
 }
 function flushUI(){
   if($('#view-learn')&&$('#view-learn').classList.contains('on')){DB.ui.scrollY=curScrollY();captureLearnAnchor();}
-  saveUI();
+  saveUI();persistHash();
 }
 window.addEventListener('scroll',()=>{
   if(!$('#view-learn').classList.contains('on'))return;
@@ -1864,13 +1864,31 @@ function bindSettings(){
 }
 
 /* ==================== ビュー切替 ==================== */
-/* サンドボックス化ビューア（origin=null）では history/hash 操作が SecurityError を投げるため安全化 */
+/* サンドボックス化ビューア（origin=null）では history/hash 操作が SecurityError を投げるため安全化。
+   通常環境（GitHub Pages等）では、ストレージが消えても再読み込みで位置を復元できるよう、
+   現在のビューとスクロール位置をURLハッシュにも書き込む。 */
 let hashSyncOK=true;
 function safeGetHash(){try{return location.hash||'';}catch(e){return '';}}
-function safeSetHash(name){
+function encodeHash(){
+  const v=DB.ui.view||'learn';
+  if(v==='learn'){
+    const a=DB.ui.anchor||'', off=Math.round(DB.ui.anchorOff||0), y=Math.round(DB.ui.scrollY||0);
+    if(a||y>2)return '#learn~'+encodeURIComponent(a)+'~'+off+'~'+y;
+    return '#learn';
+  }
+  return '#'+v;
+}
+function persistHash(){
   if(!hashSyncOK)return;
-  try{if(location.hash!=='#'+name)history.replaceState(null,'','#'+name);}
+  try{const h=encodeHash();if(location.hash!==h)history.replaceState(null,'',h);}
   catch(e){hashSyncOK=false;}
+}
+function parseHash(){
+  let raw='';try{raw=(location.hash||'').replace(/^#/,'');}catch(e){return null;}
+  if(!raw)return null;
+  const p=raw.split('~'), out={view:p[0]};
+  if(p.length>=4){out.anchor=decodeURIComponent(p[1]||'')||null;out.anchorOff=parseInt(p[2],10)||0;out.scrollY=parseInt(p[3],10)||0;}
+  return out;
 }
 function switchView(name){
   if($('#view-learn')&&$('#view-learn').classList.contains('on')){DB.ui.scrollY=curScrollY();captureLearnAnchor();} /* 学習から離れる直前の位置を確保 */
@@ -1878,8 +1896,7 @@ function switchView(name){
   const target=$('#view-'+name)||$('#view-learn');
   target.classList.add('on');
   $$('.tab').forEach(t=>t.classList.toggle('on',t.dataset.view===name));
-  safeSetHash(name);
-  DB.ui.view=name;saveUISoon();
+  DB.ui.view=name;persistHash();saveUISoon();
   if(name==='quiz'){
     if(QZ.active){$('#quizSetup').classList.add('hidden');$('#quizStage').classList.remove('hidden');}
     else{$('#quizSetup').classList.remove('hidden');$('#quizStage').classList.add('hidden');renderQuizSetup();}
@@ -1923,13 +1940,23 @@ function boot(){
   initDB();applyTheme();bindUI();bindSettings();
   renderAll();
   const valid=['learn','quiz','review','settings'];
-  const h=safeGetHash().slice(1);
-  const start=valid.includes(h)?h:(valid.includes(DB.ui.view)?DB.ui.view:'learn');
+  const hp=parseHash();
+  let start;
+  if(hp&&valid.includes(hp.view)){
+    start=hp.view;
+    if(hp.view==='learn'&&(hp.anchor||hp.scrollY)){ /* URLに位置があれば、ストレージが消えていてもここから復元 */
+      DB.ui.anchor=hp.anchor||DB.ui.anchor;
+      DB.ui.anchorOff=hp.anchorOff||0;
+      DB.ui.scrollY=hp.scrollY||0;
+    }
+  }else{
+    start=valid.includes(DB.ui.view)?DB.ui.view:'learn';
+  }
   switchView(start);
 }
 window.addEventListener('hashchange',()=>{
-  const h=safeGetHash().slice(1);
-  if(['learn','quiz','review','settings'].includes(h))switchView(h);
+  const hp=parseHash();
+  if(hp&&['learn','quiz','review','settings'].includes(hp.view)&&hp.view!==DB.ui.view)switchView(hp.view);
 });
 boot();
 </script>

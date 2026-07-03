@@ -1,0 +1,1864 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML学習ノート — アンサンブル学習・ニューラルネットワーク</title>
+<style>
+/* ============ tokens ============ */
+:root{
+  --bg:#F7F6F2; --surface:#FFFFFF; --surface2:#F1EFE9;
+  --ink:#22272F; --ink2:#59616C; --line:#E2DFD6; --line2:#D0CCC0;
+  --accent:#2D5FA8; --accent-ink:#244C86; --accent-soft:#E9F0FA; --accent-line:#BFD3EE;
+  --ok:#237A4B; --ok-soft:#E5F3EA; --ng:#BB3A3A; --ng-soft:#FBEAEA;
+  --warn:#8A6D1F; --warn-soft:#FBF3DC;
+  --mark:#FFF0B8; --mark-ink:#5A4A00;
+  --shadow:0 1px 2px rgba(30,36,48,.06),0 4px 14px rgba(30,36,48,.06);
+  --radius:10px;
+  --serif:"Hiragino Mincho ProN","Yu Mincho","BIZ UDMincho","Noto Serif JP",serif;
+  --sans:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic Medium","Meiryo",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono","Consolas","Menlo",monospace;
+}
+[data-theme="dark"]{
+  --bg:#14181F; --surface:#1C222C; --surface2:#232A36;
+  --ink:#E4E7EC; --ink2:#9AA3B0; --line:#2E3644; --line2:#3A4353;
+  --accent:#7CA9E6; --accent-ink:#A5C4F0; --accent-soft:#22304A; --accent-line:#37507A;
+  --ok:#5DBB84; --ok-soft:#1D3327; --ng:#E07A7A; --ng-soft:#3A2325;
+  --warn:#D9B45B; --warn-soft:#37301C;
+  --mark:#4A3F14; --mark-ink:#F0DC9A;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto} *{transition:none!important;animation:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.85;-webkit-font-smoothing:antialiased}
+h1,h2,h3{line-height:1.4;margin:0}
+button{font-family:inherit;font-size:14px;cursor:pointer}
+input,textarea,select{font-family:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--line2);border-radius:8px;padding:8px 10px}
+input:focus,textarea:focus,select:focus,button:focus-visible,a:focus-visible,.choice:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+textarea{width:100%;resize:vertical;line-height:1.7}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+mark{background:var(--mark);color:var(--mark-ink);padding:0 2px;border-radius:3px}
+::selection{background:var(--accent-soft)}
+
+/* ============ app shell ============ */
+.topbar{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+.topbar-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:10px 16px}
+.brand{font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.04em;white-space:nowrap}
+.brand small{font-family:var(--sans);font-size:11px;color:var(--ink2);font-weight:400;display:block;letter-spacing:.12em;margin-top:-2px}
+.tabs{display:flex;gap:2px;margin-left:auto}
+.tab{border:none;background:none;color:var(--ink2);padding:9px 14px;border-radius:8px;font-size:14.5px;display:flex;align-items:center;gap:6px}
+.tab svg{width:17px;height:17px}
+.tab:hover{background:var(--surface2);color:var(--ink)}
+.tab.on{background:var(--accent-soft);color:var(--accent-ink);font-weight:600}
+.view{max-width:1180px;margin:0 auto;padding:22px 16px 90px;display:none}
+.view.on{display:block}
+
+/* ============ common ============ */
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--surface);color:var(--ink);padding:8px 14px;border-radius:8px;transition:background .15s}
+.btn:hover{background:var(--surface2)}
+.btn svg{width:15px;height:15px}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.pri:hover{background:var(--accent-ink)}
+[data-theme="dark"] .btn.pri{color:#0F1420}
+.btn.danger{color:var(--ng);border-color:var(--ng)}
+.btn.danger:hover{background:var(--ng-soft)}
+.btn.sm{padding:4px 10px;font-size:13px}
+.btn.ghost{border-color:transparent;background:none;color:var(--ink2)}
+.btn.ghost:hover{background:var(--surface2);color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:2px 9px;border-radius:99px;background:var(--surface2);color:var(--ink2)}
+.chip.acc{background:var(--accent-soft);color:var(--accent-ink)}
+.chip.ng{background:var(--ng-soft);color:var(--ng)}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.muted{color:var(--ink2);font-size:13.5px}
+.sect-title{font-family:var(--serif);font-size:18px;font-weight:700;letter-spacing:.03em;margin:26px 0 12px;display:flex;align-items:center;gap:10px}
+.sect-title::after{content:"";flex:1;height:1px;background:var(--line2)}
+.hidden{display:none!important}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:5px;letter-spacing:.05em}
+.field input,.field select{width:100%}
+.field .hint{font-size:12px;color:var(--ink2);margin-top:3px}
+
+/* ============ learn view ============ */
+.learn-wrap{display:grid;grid-template-columns:264px 1fr;gap:26px;align-items:start}
+.toc{position:sticky;top:76px;max-height:calc(100vh - 96px);overflow-y:auto;padding:6px 4px 20px;font-size:13.5px}
+.toc-cat{margin-bottom:2px}
+.toc-cat>a{display:block;padding:5px 10px;border-radius:7px;color:var(--ink);font-weight:600;border-left:3px solid transparent}
+.toc-cat>a:hover{background:var(--surface2);text-decoration:none}
+.toc-cat.cur>a{border-left-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+.toc-terms{margin:0;padding:0 0 4px 14px;list-style:none}
+.toc-terms a{display:block;padding:2px 8px;border-radius:6px;color:var(--ink2);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toc-terms a:hover{background:var(--surface2);color:var(--ink);text-decoration:none}
+.learn-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.searchbox{position:relative;flex:1;min-width:200px}
+.searchbox svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--ink2)}
+.searchbox input{width:100%;padding-left:32px}
+.cat-block{margin-bottom:18px}
+details.cat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+details.cat>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;user-select:none}
+details.cat>summary::-webkit-details-marker{display:none}
+details.cat>summary:hover{background:var(--surface2)}
+.cat-no{font-family:var(--serif);font-size:13px;color:var(--accent);border:1px solid var(--accent-line);border-radius:6px;padding:1px 8px;letter-spacing:.08em;flex-shrink:0}
+.cat-name{font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.03em;flex:1}
+.cat-meta{font-size:12px;color:var(--ink2);flex-shrink:0}
+.caret{width:16px;height:16px;color:var(--ink2);transition:transform .2s;flex-shrink:0}
+details[open]>summary .caret{transform:rotate(90deg)}
+.cat-body{border-top:1px solid var(--line);padding:8px 18px 16px}
+.cat-actions{display:flex;gap:6px;justify-content:flex-end;padding:8px 0 2px}
+details.term{border-bottom:1px dashed var(--line)}
+details.term:last-of-type{border-bottom:none}
+details.term>summary{list-style:none;display:flex;align-items:baseline;gap:10px;padding:11px 4px;cursor:pointer;user-select:none}
+details.term>summary::-webkit-details-marker{display:none}
+details.term>summary:hover .term-name{color:var(--accent-ink)}
+.term-name{font-size:16.5px;font-weight:700;letter-spacing:.02em}
+.term-sub{font-size:12px;color:var(--ink2)}
+.tcaret{width:13px;height:13px;color:var(--line2);transition:transform .2s;flex-shrink:0;align-self:center}
+details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
+.term-body{padding:2px 4px 16px 23px}
+.term-def{white-space:pre-wrap}
+.kv-label{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--accent-ink);background:var(--accent-soft);border-radius:5px;padding:1px 8px;margin:10px 0 4px}
+.formula{font-family:var(--mono);font-size:14.5px;background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:8px;padding:10px 14px;margin:4px 0;white-space:pre-wrap;line-height:2}
+.pycode{font-family:var(--mono);font-size:13.5px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:4px 0;white-space:pre-wrap}
+.note-box{background:var(--warn-soft);border-left:3px solid var(--warn);border-radius:0 8px 8px 0;padding:8px 14px;margin:8px 0;font-size:14.5px;white-space:pre-wrap}
+.fig-box{margin:12px 0 4px;text-align:center}
+.fig-box svg{max-width:100%;height:auto}
+.term-foot{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.flash{animation:flashbg 1.8s ease-out}
+@keyframes flashbg{0%{background:var(--mark)}100%{background:transparent}}
+
+/* ============ quiz view ============ */
+.quiz-setup{max-width:660px;margin:0 auto}
+.catgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin:10px 0 4px}
+.catcheck{display:flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;font-size:14px}
+.catcheck:hover{border-color:var(--accent-line)}
+.catcheck input{accent-color:var(--accent)}
+.catcheck.on{background:var(--accent-soft);border-color:var(--accent-line)}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.seg button{border:none;background:var(--surface);padding:8px 20px;color:var(--ink2)}
+.seg button.on{background:var(--accent);color:#fff;font-weight:600}
+[data-theme="dark"] .seg button.on{color:#0F1420}
+.gemini-status{font-size:13px;display:flex;align-items:center;gap:7px;color:var(--ink2)}
+.dot{width:8px;height:8px;border-radius:99px;background:var(--line2)}
+.dot.on{background:var(--ok)}
+.quiz-stage{max-width:720px;margin:0 auto}
+.q-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.q-progress{flex:1;height:6px;background:var(--surface2);border-radius:99px;overflow:hidden}
+.q-progress i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.q-count{font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.q-card{padding:24px 26px}
+.q-src{display:flex;gap:6px;margin-bottom:10px}
+.q-text{font-size:17.5px;font-weight:600;line-height:1.9;white-space:pre-wrap;margin-bottom:18px}
+.choices{display:grid;gap:9px}
+.choice{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:9px;padding:12px 15px;font-size:15px;line-height:1.7;display:flex;gap:11px;align-items:flex-start;transition:border-color .12s,background .12s}
+.choice:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
+.choice .ab{font-family:var(--serif);font-weight:700;color:var(--accent);flex-shrink:0}
+.choice.correct{border-color:var(--ok);background:var(--ok-soft)}
+.choice.wrong{border-color:var(--ng);background:var(--ng-soft)}
+.choice:disabled{cursor:default}
+.judge{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;margin:18px 0 8px}
+.judge.ok{color:var(--ok)}.judge.ng{color:var(--ng)}
+.judge svg{width:24px;height:24px}
+.expl-box{background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:14px 16px;font-size:14.5px;white-space:pre-wrap}
+.expl-term{margin-top:10px;border-top:1px dashed var(--line2);padding-top:10px}
+.expl-term b{font-size:15px}
+.written-ans{background:var(--ok-soft);border:1px solid var(--ok);border-radius:9px;padding:13px 16px;margin:14px 0;white-space:pre-wrap}
+.selfgrade{display:flex;gap:10px;margin-top:14px}
+.q-foot{display:flex;justify-content:flex-end;margin-top:18px;gap:10px}
+.result-num{font-family:var(--serif);font-size:52px;font-weight:700;text-align:center;letter-spacing:.02em}
+.result-num small{font-size:20px;color:var(--ink2)}
+.genchip{position:fixed;bottom:18px;right:18px;z-index:60;background:var(--surface);border:1px solid var(--accent-line);border-radius:99px;padding:7px 16px;font-size:13px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;color:var(--accent-ink)}
+.spinner{width:13px;height:13px;border:2px solid var(--accent-line);border-top-color:var(--accent);border-radius:99px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ============ review view ============ */
+.dash{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px}
+.dash .card{padding:16px 18px}
+.dash h3{font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--ink2);margin-bottom:8px}
+.dash-weaknum{grid-column:1/-1;display:flex;align-items:center;gap:26px}
+.weaknum{font-family:var(--serif);font-size:46px;font-weight:700;color:var(--ng);line-height:1}
+.weaknum.zero{color:var(--ok)}
+.weak-table{width:100%;border-collapse:collapse;font-size:14px}
+.weak-table th{text-align:left;font-size:11.5px;letter-spacing:.1em;color:var(--ink2);border-bottom:1px solid var(--line2);padding:7px 10px;font-weight:600}
+.weak-table td{border-bottom:1px solid var(--line);padding:9px 10px;vertical-align:middle}
+.weak-table tr:hover td{background:var(--surface2)}
+.pri-bar{display:inline-block;height:7px;border-radius:99px;background:var(--ng);opacity:.85;vertical-align:middle}
+@media(max-width:760px){.dash{grid-template-columns:1fr}}
+
+/* ============ modal / toast ============ */
+.modal-bg{position:fixed;inset:0;background:rgba(20,24,32,.45);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:40px 14px;overflow-y:auto}
+.modal{background:var(--surface);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:100%;max-width:640px;padding:24px 26px;margin-bottom:60px}
+.modal.wide{max-width:860px}
+.modal h2{font-family:var(--serif);font-size:19px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;border-top:1px solid var(--line);padding-top:16px}
+#toasts{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center}
+.toast{background:var(--ink);color:var(--bg);padding:10px 20px;border-radius:99px;font-size:14px;box-shadow:var(--shadow);animation:toastin .25s ease-out}
+.toast.ng{background:var(--ng);color:#fff}
+@keyframes toastin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* import preview */
+.imp-cat{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px;background:var(--surface2)}
+.imp-cat-head{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.imp-term{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:12px 14px;margin-bottom:9px}
+.imp-term.off{opacity:.4}
+.imp-term .row{margin-bottom:7px}
+.imp-term textarea{font-size:13.5px}
+.imp-term input{font-size:13.5px}
+
+/* quiz manager */
+.mq-item{border:1px solid var(--line);border-radius:9px;padding:11px 14px;margin-bottom:9px;background:var(--surface)}
+.mq-item .q{font-weight:600;font-size:14.5px}
+.mq-item .meta{font-size:12.5px;color:var(--ink2);margin-top:3px}
+
+/* ============ responsive ============ */
+.toc-toggle{display:none}
+@media(max-width:900px){
+  .learn-wrap{grid-template-columns:1fr}
+  .toc-toggle{display:inline-flex}
+  .toc{position:fixed;left:0;top:0;bottom:0;z-index:90;background:var(--surface);width:290px;max-height:none;padding:70px 14px 30px;box-shadow:var(--shadow);transform:translateX(-100%);transition:transform .22s}
+  .toc.open{transform:none}
+  .toc-close{position:absolute;top:16px;right:14px}
+  .topbar-in{flex-wrap:wrap;gap:6px}
+  .tabs{margin-left:0;width:100%;justify-content:space-between}
+  .tab{padding:8px 8px;font-size:13px}
+  .brand{font-size:17px}
+  .view{padding:16px 12px 90px}
+  .q-card{padding:18px 16px}
+}
+@media(min-width:901px){.toc-close{display:none}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">ML学習ノート<small>ENSEMBLE / NN / OPTIMIZATION</small></div>
+    <nav class="tabs" id="tabs">
+      <button class="tab" data-view="learn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V4H6.5A2.5 2.5 0 004 6.5v13zM4 19.5A2.5 2.5 0 006.5 22H20"/></svg>学習</button>
+      <button class="tab" data-view="quiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>クイズ</button>
+      <button class="tab" data-view="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>復習</button>
+      <button class="tab" data-view="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008.6 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 8.6a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>設定</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ 学習ビュー ============ -->
+<main id="view-learn" class="view">
+  <div class="learn-tools">
+    <button class="btn toc-toggle" id="tocToggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>目次</button>
+    <div class="searchbox">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="search" id="searchInput" placeholder="用語・定義を検索…" autocomplete="off">
+    </div>
+    <button class="btn sm" id="btnExpandAll">すべて開く</button>
+    <button class="btn sm" id="btnCollapseAll">すべて閉じる</button>
+    <button class="btn sm" id="btnAddCat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>カテゴリ追加</button>
+    <button class="btn sm pri" id="btnBulkImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>テキストから一括追加</button>
+  </div>
+  <div class="learn-wrap">
+    <nav class="toc" id="toc" aria-label="目次">
+      <button class="btn sm ghost toc-close" id="tocClose">閉じる ✕</button>
+      <div id="tocList"></div>
+    </nav>
+    <div id="contentArea"></div>
+  </div>
+</main>
+
+<!-- ============ クイズビュー ============ -->
+<main id="view-quiz" class="view">
+  <div id="quizSetup" class="quiz-setup">
+    <h2 class="sect-title">クイズ設定</h2>
+    <p class="muted" style="margin:0 0 6px">出題するカテゴリを選んでください（複数選択可）。</p>
+    <div class="row" style="margin-bottom:4px">
+      <button class="btn sm" id="btnCatAll">すべて選択</button>
+      <button class="btn sm" id="btnCatNone">選択解除</button>
+      <span class="muted" id="catSelCount"></span>
+    </div>
+    <div class="catgrid" id="quizCatGrid"></div>
+    <h2 class="sect-title">問題数</h2>
+    <div class="seg" id="qCountSeg">
+      <button data-n="5">5問</button><button data-n="10" class="on">10問</button><button data-n="20">20問</button>
+    </div>
+    <div style="margin-top:24px" class="row">
+      <button class="btn pri" id="btnStartQuiz" style="font-size:16px;padding:11px 28px">クイズを開始</button>
+      <span class="gemini-status" id="geminiStatusLine"><span class="dot" id="geminiDot"></span><span id="geminiStatusText"></span></span>
+    </div>
+  </div>
+  <div id="quizStage" class="quiz-stage hidden"></div>
+</main>
+
+<!-- ============ 復習ビュー ============ -->
+<main id="view-review" class="view">
+  <div class="dash">
+    <div class="card dash-weaknum">
+      <div>
+        <h3>弱点用語</h3>
+        <div class="weaknum" id="weakNum">0</div>
+      </div>
+      <div style="flex:1">
+        <p class="muted" id="weakSummaryText" style="margin:0"></p>
+        <div class="row" style="margin-top:10px">
+          <button class="btn pri" id="btnStartReview">復習クイズを開始</button>
+          <div class="seg" id="rCountSeg"><button data-n="5">5問</button><button data-n="10" class="on">10問</button><button data-n="20">20問</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="card"><h3>日別の演習量と正答率（直近30日）</h3><div id="dashDaily"></div></div>
+    <div class="card"><h3>カテゴリ別正答率</h3><div id="dashCats"></div></div>
+  </div>
+  <h2 class="sect-title">弱点リスト（優先度順）</h2>
+  <p class="muted" style="margin:-4px 0 12px">優先度 = 間違えた回数 × 経過日数。連続2回正解すると自動的にリストから外れます。</p>
+  <div class="card" style="overflow-x:auto">
+    <table class="weak-table" id="weakTable"></table>
+  </div>
+</main>
+
+<!-- ============ 設定ビュー ============ -->
+<main id="view-settings" class="view">
+  <div style="max-width:660px;margin:0 auto">
+    <h2 class="sect-title">表示</h2>
+    <div class="card" style="padding:18px 20px">
+      <div class="field"><label>テーマ</label>
+        <select id="setTheme">
+          <option value="auto">OSの設定に従う</option>
+          <option value="light">ライト</option>
+          <option value="dark">ダーク</option>
+        </select>
+      </div>
+    </div>
+
+    <h2 class="sect-title">Gemini API（AI問題生成・テキスト整形）</h2>
+    <div class="card" style="padding:18px 20px">
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="setUseGemini" style="width:auto;accent-color:var(--accent)"> Gemini機能を使う（OFFの場合は常にテンプレート出題）</label>
+      </div>
+      <div class="field"><label>APIキー</label>
+        <input type="password" id="setApiKey" placeholder="AIza..." autocomplete="off">
+        <div class="hint">Google AI Studio で取得したキーを入力します。この端末のブラウザ内（localStorage）にのみ保存されます。</div>
+      </div>
+      <div class="field"><label>モデル名</label>
+        <input type="text" id="setModel" placeholder="gemini-2.5-flash">
+        <div class="hint">既定は軽量モデルです。将来モデルが変わった場合はここを書き換えるだけで追従できます。</div>
+      </div>
+      <div class="row">
+        <button class="btn" id="btnTestApi">接続テスト</button>
+        <span class="muted" id="apiTestResult"></span>
+      </div>
+    </div>
+
+    <h2 class="sect-title">データ管理</h2>
+    <div class="card" style="padding:18px 20px">
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn" id="btnExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>JSONエクスポート</button>
+        <button class="btn" id="btnImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>JSONインポート</button>
+        <input type="file" id="importFile" accept=".json,application/json" class="hidden">
+      </div>
+      <p class="muted" style="margin:0 0 12px">エクスポートには、コンテンツ・手動クイズ・弱点記録・統計・AI生成問題プールが含まれます（APIキーは含まれません）。</p>
+      <div class="row">
+        <button class="btn" id="btnRestoreInitial">初期コンテンツを復元</button>
+        <button class="btn danger" id="btnResetAll">全データをリセット</button>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:16px">このアプリは単一のHTMLファイルとして動作し、データはすべてブラウザの localStorage に保存されます。定期的なJSONエクスポートをおすすめします。</p>
+  </div>
+</main>
+
+<div id="modalRoot"></div>
+<div id="toasts"></div>
+<div id="genChip" class="genchip hidden"><span class="spinner"></span><span id="genChipText">AI問題を生成中…</span></div>
+
+<script>
+'use strict';
+/* ==================== 初期データ ==================== */
+function seedContents(){
+  const C = [
+    ['c-ens','アンサンブル学習'],
+    ['c-met','性能指標'],
+    ['c-nn','ニューラルネットワークの基礎'],
+    ['c-init','重みの初期値'],
+    ['c-act','中間層の活性化関数'],
+    ['c-cost','コスト関数と尤度'],
+    ['c-dact','中間層の活性化関数の微分'],
+    ['c-doact','出力層の活性化関数の微分'],
+    ['c-dcost','コスト関数の微分'],
+    ['c-optl','最適化アルゴリズムの系譜'],
+    ['c-opt','最適化アルゴリズム'],
+    ['c-tech','学習を進めるための手法'],
+    ['c-augi','Data Augmentation（画像）'],
+    ['c-augt','Easy Data Augmentation（テキスト）'],
+    ['c-semi','半教師あり学習'],
+    ['c-reg','正則化'],
+    ['c-noise','ノイズ注入と頑健性'],
+  ].map((c,i)=>({id:c[0],name:c[1],order:i}));
+
+  const T=[];let ord=0;
+  const t=(id,cat,name,def,o={})=>T.push({id,cat,name,def,formula:o.f||'',py:o.py||'',note:o.n||'',kps:o.k||[],fig:o.fig||null,order:ord++});
+
+  /* --- アンサンブル学習 --- */
+  t('t-bagging','c-ens','バギング',
+    'ブートストラップ法を用いて複数の学習データセットを抽出することによって、データセットに多様性を持たせ、複数のモデルを並列に学習する手法。各モデルの予測を多数決や平均で統合する。\n→ バリアンスを低くする',
+    {k:['ブートストラップ法','多様性','バリアンス'],n:'代表例はランダムフォレスト。',fig:'bagging'});
+  t('t-boosting','c-ens','ブースティング',
+    '教師データを使って学習したベースモデルの間違った予測に焦点を当て、「重み」を加味して次のモデルを逐次的に改善していく手法。\n→ バイアスを低くする',
+    {k:['重み','逐次的','バイアス'],fig:'boosting'});
+  t('t-stacking','c-ens','スタッキング',
+    'まず様々な学習器（SVMやロジスティック回帰など）に、ブートストラップ法で得たデータセットを学習させる。次に、それぞれの予測値を使って、どの学習器の組合せを使うと正解率が一番高いかを学習し、より正解率の高い学習器のみを組み合わせることによって精度を上げる手法。\n→ バイアスとバリアンスをバランスよく調整できる',
+    {k:['予測値','組合せ','バランス'],fig:'stacking'});
+  t('t-bootstrap','c-ens','ブートストラップ法',
+    '重複を許してデータをランダムに抽出し、複数のサンプルセットを生成する手法。元データと同じサイズのデータセットを何組も作れるため、バギングなどでデータセットに多様性を持たせる目的で使われる。',
+    {k:['重複を許して','ランダム','サンプルセット']});
+  t('t-bias','c-ens','バイアス',
+    '実測値と予測値との誤差の平均。値が小さいほど予測値と真の値の誤差が小さい。',
+    {k:['誤差の平均'],n:'バイアスとバリアンスはトレードオフの関係。'});
+  t('t-variance','c-ens','バリアンス',
+    '予測値がどれだけ散らばっているかを示す度合いで、値が小さいほど予測値の散らばりが小さい。',
+    {k:['散らばり','トレードオフ','過学習'],n:'バイアスとバリアンスはトレードオフの関係。低バイアスの状態（予測値と実際値の誤差が少ない）の方が良いが、同時にバリアンスが高まり、過学習に陥るケースがある。'});
+
+  /* --- 性能指標 --- */
+  t('t-roc','c-met','ROCカーブ',
+    'X軸に偽陽性率、Y軸に真陽性率をとって分類器の性能を表した曲線。理想的な点は左上に近い点。つまり、低い偽陽性率を保ちながら高い再現率（真陽性率）を達成することが理想である。',
+    {k:['偽陽性率','真陽性率','左上'],fig:'roc'});
+  t('t-auc','c-met','AUCスコア',
+    'ROCカーブの下の領域の面積を用いて出したスコア（area under the curve）。\n・完全なクラス分類器: AUC = 1\n・ランダムな予測をする分類器: AUC = 0.5',
+    {k:['面積','0.5']});
+  t('t-rae','c-met','RAE（相対絶対誤差）',
+    'MAE（平均絶対誤差）を正規化し、0から1の間で表したもの。',
+    {k:['MAE','正規化']});
+  t('t-rse','c-met','RSE（相対二乗誤差)',
+    'RMSE（二乗平均平方根誤差）を正規化し、0から1の間で表したもの。',
+    {k:['RMSE','正規化']});
+  t('t-cod','c-met','決定係数（COD）',
+    '別名は寄与率。説明変数が被説明変数のどれくらいを説明できるかを表す値。予測値と正解値のズレを0から1の間で表し、1に近いほど分析精度が高いことになる。',
+    {k:['寄与率','説明変数','1に近い']});
+  t('t-ppl','c-met','パープレキシティ（困惑度）',
+    '言語モデルが次の単語をどれだけ正確に予測できるかを表す評価指標。値が低いほど予測精度が高く、モデルの性能が良いことを示す。\n・優秀なモデル: 30〜60\n・平均的なモデル: 60〜100\n・性能の低いモデル: 100以上',
+    {f:'Perplexity = exp(Cross Entropy)',
+     n:'モデルが予測した単語の確率が高いほどパープレキシティは低くなる。言語モデルの学習ではクロスエントロピー誤差を最小化することでパープレキシティも低くなる。訓練ではクロスエントロピー誤差を使用するが、評価ではパープレキシティで表現するのが一般的。',
+     k:['低いほど','30〜60','クロスエントロピー誤差']});
+
+  /* --- NN基礎 --- */
+  t('t-uat','c-nn','万能近似定理',
+    'どんな関数を学習するかに関わらず、隠れ層に十分な数のニューロンがあり、非線形の活性化関数を使用していれば、ニューラルネットワークは任意の連続関数を近似できるという定理。',
+    {k:['隠れ層','非線形','連続関数']});
+  t('t-gauss','c-nn','Gaussian normalizer（標準化）',
+    'データの加算平均が0、分散が1になるように調整する正規化手法。正規分布が想定されているデータに使用する。',
+    {f:'Y = (X - μ) / σ',k:['平均が0','分散が1','正規分布']});
+  t('t-minmax','c-nn','Min-Max normalizer',
+    'データの最小値が0、最大値が1になるように変換する正規化手法。ある程度連続性があり、一様分布が想定されているデータに使用する。',
+    {f:'Y = (X - X_{min}) / (X_{max} - X_{min})',k:['最小値が0','最大値が1','一様分布']});
+  t('t-iter','c-nn','イテレーション数',
+    '1エポックの中でミニバッチによる重みの更新が行われる回数。例えば1,000件のデータセットを200件ずつのミニバッチに分けると、イテレーション数は 5（= 1,000 ÷ 200）となる。',
+    {k:['重みの更新','ミニバッチ']});
+  t('t-epoch','c-nn','エポック数',
+    '学習反復回数のこと。全てのミニバッチの計算を行い、データセットのすべてのデータが1回実行されると1エポックとなる。',
+    {k:['学習反復回数','すべてのデータ']});
+
+  /* --- 重みの初期値 --- */
+  t('t-xavier','c-init','Xavierの初期値',
+    '前層のノード数がnの場合、1/√n を標準偏差としたガウス分布からの乱数で重みの初期値を決める方法。主にシグモイド関数やtanh関数を活性化関数に使う際に使用する。',
+    {f:'標準偏差 = 1/√n',k:['1/√n','シグモイド','tanh']});
+  t('t-he','c-init','Heの初期値',
+    '前層のノード数がnの場合、√(2/n) を標準偏差としたガウス分布からの乱数で重みの初期値を決める方法。主にReLU関数を活性化関数に使う際に使用する。',
+    {f:'標準偏差 = √(2/n)',k:['√(2/n)','ReLU']});
+
+  /* --- 活性化関数 --- */
+  t('t-step','c-act','ステップ関数',
+    '入力が0未満なら0、0以上なら1を出力する関数。',
+    {f:'f(u) = 0 (u < 0)\nf(u) = 1 (u ≧ 0)',py:'np.array(x > 0, dtype=np.int)',
+     n:'x>0 でも x>=0 でも良い。どちらのパターンも存在する。',k:['0未満なら0','0以上なら1'],fig:'step'});
+  t('t-sigmoid','c-act','シグモイド関数',
+    '入力を0から1の間の値に変換するS字型の関数。出力を確率として解釈できる。',
+    {f:'f(x) = 1 / (1 + e^{-x})',py:'1 / (1 + np.exp(-x))',k:['0から1','S字'],fig:'sigmoid'});
+  t('t-tanh','c-act','tanh関数',
+    '入力を-1から1の間の値に変換するS字型の関数。RNNで使われている。',
+    {f:'f(x) = (e^{x} - e^{-x}) / (e^{x} + e^{-x})',py:'(np.exp(x)-np.exp(-x)) / (np.exp(x)+np.exp(-x))',
+     k:['-1から1','RNN'],fig:'tanh'});
+  t('t-relu','c-act','ReLU関数',
+    '入力が0以下なら0、正ならそのまま出力する関数。\nデメリット: 入力が負の時は微分値が0なので、重みの更新がされない。',
+    {f:'f(x) = max(0, x)',py:'np.maximum(0, x)',k:['微分値が0','重みの更新'],fig:'relu'});
+  t('t-lrelu','c-act','Leaky ReLU関数',
+    'ReLUの改良版。入力が0以下のときも小さな傾き 0.01 を持たせることで、負の領域でも勾配が消えないようにした関数。',
+    {f:'f(x) = x (x > 0)\nf(x) = 0.01x (x ≦ 0)',k:['0.01','勾配'],fig:'lrelu'});
+  t('t-prelu','c-act','PReLU関数（Parametric ReLU）',
+    'Leaky ReLUの負の領域の傾き a を、固定値ではなくハイパーパラメータとした関数。',
+    {f:'f(x) = x (x > 0)\nf(x) = ax (x ≦ 0)',k:['ハイパーパラメータ']});
+
+  /* --- コスト関数と尤度 --- */
+  t('t-bce','c-cost','2値クロスエントロピー誤差',
+    '2値分類に使われるコスト関数。',
+    {f:'L = -{ t log y + (1-t) log(1-y) }',k:['2値分類']});
+  t('t-ce','c-cost','クロスエントロピー誤差',
+    '多クラス分類に使われるコスト関数。',
+    {f:'L = -Σ t_{i} log y_{i}',k:['多クラス分類']});
+  t('t-sse','c-cost','二乗和誤差',
+    '回帰に使われるコスト関数。',
+    {f:'L = 1/2 (t - y)^{2}',k:['回帰']});
+  t('t-likelihood','c-cost','尤度',
+    'xを入れたときに正解であるyが出てくる確率。つまり、正解をモデルが出せる確率。\n例: 作成されたモデルでXを入力して計算させた場合に、ねこ=0.7、いぬ=0.3と出るモデルだったとき、Xが猫だった場合、尤度は0.7（70%）となる。',
+    {k:['正解','確率']});
+  t('t-loglik','c-cost','対数尤度',
+    '尤度の対数をとったもの。これを最大化することを目的とする。',
+    {f:'Σ log P_{model}(y_{i} | x_{i})',k:['最大化']});
+  t('t-mle','c-cost','最尤推定',
+    '対数尤度関数を最大化するパラメータを求める推定法。対数尤度関数の最大化は、負の対数尤度関数 J(Θ) の最小化と同値である。',
+    {f:'J(Θ) = -Σ log P_{model}(y_{i} | x_{i})',k:['最大化','最小化']});
+
+  /* --- 中間層の活性化関数の微分 --- */
+  t('t-dsigmoid','c-dact','シグモイド関数の微分',
+    'シグモイド関数の微分は、出力yを用いて y(1-y) と表せる。最大値はy=0.5のときの0.25と小さいため、層が深くなると勾配消失の一因になる。',
+    {f:'y = 1/(1+e^{-x})\ny\' = y(1-y)',k:['y(1-y)','0.25','勾配消失']});
+  t('t-dtanh','c-dact','tanh関数の微分',
+    'tanh関数の微分は出力yを用いて 1-y^2 と表せる。ほかに 4/(e^x+e^-x)^2、1/cosh^2 x、{(e^x+e^-x)/2}^-2 などの表現もある。',
+    {f:'y = (e^{x}-e^{-x})/(e^{x}+e^{-x})\ny\' = 1 - y^{2}',k:['1-y^2']});
+  t('t-drelu','c-dact','ReLU関数の微分',
+    'ReLU関数の微分は、入力が0以上なら1、0未満なら0となる。',
+    {f:'f(u) = x (u ≧ 0)、f(u) = 0 (u < 0)\nf\'(u) = 1 (u ≧ 0)、f\'(u) = 0 (u < 0)',k:['0以上なら1','0未満なら0']});
+
+  /* --- 出力層の活性化関数の微分 --- */
+  t('t-dosigmoid','c-doact','シグモイド関数の微分（出力層）',
+    '出力層で用いるシグモイド関数の微分も y\' = y(1-y)。2値クロスエントロピー誤差と組み合わせると、誤差逆伝播の勾配が y - t と簡潔になる。',
+    {f:'y = 1/(1+e^{-x})\ny\' = y(1-y)',k:['y(1-y)','y - t']});
+  t('t-dsoftmax','c-doact','ソフトマックス関数の微分',
+    'ソフトマックス関数の微分は、i=jのとき y_i(1-y_i)、i≠jのとき -y_i・y_j となる。クロスエントロピー誤差と組み合わせると勾配は y - t と簡潔になる。',
+    {f:'y_{i} = exp(z_{i}) / Σ exp(z_{j})\n∂y_{i}/∂z_{j} = y_{i}(1-y_{i})  (i = j)\n∂y_{i}/∂z_{j} = -y_{i}y_{j}  (i ≠ j)',
+     k:['y_i(1-y_i)','-y_i・y_j']});
+
+  /* --- コスト関数の微分 --- */
+  t('t-dbce','c-dcost','2値クロスエントロピーの微分',
+    '2値クロスエントロピー誤差をyで微分すると -t/y + (1-t)/(1-y) となる。',
+    {f:'L = -t log y - (1-t) log(1-y)\n∂L/∂y = -t/y + (1-t)/(1-y)',k:['-t/y + (1-t)/(1-y)']});
+  t('t-dce','c-dcost','クロスエントロピーの微分',
+    'クロスエントロピー誤差をy_iで微分すると -t_i/y_i となる。',
+    {f:'L = -Σ t_{i} log y_{i}\n∂L/∂y_{i} = -t_{i}/y_{i}',k:['-t_i/y_i']});
+  t('t-dsse','c-dcost','二乗和誤差の微分',
+    '二乗和誤差をyで微分すると y - t となる（予測値と正解値の差そのもの）。',
+    {f:'L = 1/2 (t - y)^{2}\n∂L/∂y = y - t',k:['y - t']});
+
+  /* --- 最適化アルゴリズムの系譜 --- */
+  t('t-l-sgd-ada','c-optl','SGD → AdaGrad',
+    'パラメータごとに学習率を個々に可変して重みを更新するように改良した。',{k:['学習率','個々']});
+  t('t-l-ada-rms','c-optl','AdaGrad → RMSprop',
+    '学習率の減少を防ぐために、累積二乗和ではなく移動平均を用いるように改良した。',{k:['学習率の減少','移動平均']});
+  t('t-l-sgd-mom','c-optl','SGD → モメンタム',
+    '前回の移動量を考慮して重みを更新するように改良した。',{k:['前回の移動量']});
+  t('t-l-mom-nes','c-optl','モメンタム → ネステロフのモメンタム',
+    '更新前の点における勾配ではなく、慣性による更新後の点における勾配で更新するように改良した。',{k:['更新後の点','慣性']});
+  t('t-l-adam','c-optl','ネステロフのモメンタム + RMSprop → Adam',
+    '前回の移動量と学習率を共に調整して重みを更新するように統合した。',{k:['前回の移動量','学習率']});
+
+  /* --- 最適化アルゴリズム --- */
+  t('t-sgd','c-opt','確率的勾配降下法（SGD）',
+    '勾配降下法に加え、毎回学習データをランダムにシャッフルして、指定したミニバッチ数ごとに重みを更新するミニバッチ学習を利用する更新方法（Stochastic Gradient Descent）。\n問題点: 勾配が小さい方向に学習が進みづらいため、学習時間がかかる。',
+    {f:'W[t] := W[t] - α∇E(W[t])',k:['ランダムにシャッフル','ミニバッチ','学習時間']});
+  t('t-momentum','c-opt','モメンタム',
+    '局所的に誤差の勾配が0に近くなり、学習が進まない場合がある。物理でいうところの「速度」に当たるvという変数を足すことで、学習の移動量を調整する最適化アルゴリズムである。',
+    {f:'v[t] := βv[t-1] - α∇E(W[t-1])\nW[t] := W[t-1] + v[t]',k:['速度','移動量']});
+  t('t-nesterov','c-opt','ネステロフのモメンタム',
+    'モメンタム法では更新前の点における勾配で更新しているのに対し、ネステロフのモメンタムでは、慣性による更新後の点における勾配で更新する（Nesterov Momentum）。',
+    {f:'v[t] := βv[t-1] - α∇E(W[t-1] + βv[t-1])\nW[t] := W[t-1] + v[t]',k:['更新後の点','慣性']});
+  t('t-adagrad','c-opt','AdaGrad',
+    '初期値から大きく変わった重みはあまり更新しなくていいのではないか、という考え方で、今まで動いた距離に応じてそれぞれの重みを補正するという、学習係数の減衰という手法。\n問題点: h[t]は徐々に大きくなっていくため、時間が経つと学習率がどんどん小さくなり、学習が進まなくなる可能性がある。',
+    {f:'h[t] = h[t-1] + ∇E(W[t]) ⊙ ∇E(W[t])\nα[t] = α[0] × 1/(√h[t] + ε)\nW[t+1] = W[t] - α[t]∇E(W[t])',
+     k:['動いた距離','学習係数の減衰','小さくなり']});
+  t('t-rmsprop','c-opt','RMSprop',
+    'AdaGradを改良したアルゴリズムで、学習率の減少を解消する仕組みが取り入れられている。過去の情報をすべて累積させていくのではなく、過去の累積と最新の情報を β : 1-β の比率で按分しながら蓄積させていく。累積二乗和ではなく移動平均をとる。',
+    {f:'h[t] = βh[t-1] + (1-β)∇E(W[t]) ⊙ ∇E(W[t])\nα[t] = α[0] × 1/(√h[t] + ε)\nW[t+1] = W[t] - α[t]∇E(W[t])',
+     n:'減衰率βは、過去の勾配の影響を抑えるとともに、新しいh[t]を優先して反映させる（AdaGradでは均等に考慮して計算していた）。',
+     k:['学習率の減少','移動平均','β : 1-β']});
+  t('t-adam','c-opt','Adam（Adaptive Momentum）',
+    'モメンタムと、AdaGrad/RMSpropを掛け合わせたアルゴリズム。現状最も評価されている手法のひとつ。',
+    {f:'m[t+1] = β_{1}m[t] + (1-β_{1})∇E(W[t])\nv[t+1] = β_{2}v[t] + (1-β_{2})∇E(W[t])^{2}\nm̂ = m[t+1] / (1-β_{1}^{t})\nv̂ = v[t+1] / (1-β_{2}^{t})\nW[t+1] = W[t] - α × m̂/(√v̂ + ε)',
+     k:['モメンタム','掛け合わせた']});
+
+  /* --- 学習を進めるための手法 --- */
+  t('t-h-data','c-tech','課題: データが少ない',
+    '対処法: Data Augmentation（データの拡張）。画像の反転・回転・切り抜きなどでデータを水増しする。',{k:['Data Augmentation']});
+  t('t-h-label','c-tech','課題: ラベルが少ない',
+    '対処法: 半教師あり学習。ラベルなしデータも活用して学習する。',{k:['半教師あり学習']});
+  t('t-h-overfit','c-tech','課題: 過学習／次元の呪い',
+    '対処法: 正則化項。損失関数に罰則を加えてモデルの複雑さを抑える。',{k:['正則化項']});
+  t('t-h-vanish','c-tech','課題: 勾配消失問題',
+    '対処法: 活性化関数や勾配降下法の選択。ReLU系の採用や最適化手法の変更で勾配が消えにくくする。',{k:['活性化関数','勾配降下法']});
+  t('t-h-noise','c-tech','課題: 教師あり学習のラベルの間違い',
+    '対処法: 出力目標に対するノイズの注入（ラベル平滑化など）でノイズへの頑健性を高める。',{k:['ノイズの注入','ラベル平滑化']});
+  t('t-h-pretrain','c-tech','課題: 適合性が高い問題／計算コストが高い',
+    '対処法: 事前学習。学習済みモデルを土台にすることで計算コストを抑える。',{k:['事前学習']});
+  t('t-h-hyper','c-tech','課題: ハイパーパラメータの探索',
+    '対処法: グリッドサーチ、ランダムサーチ、早期終了。',{k:['グリッドサーチ','ランダムサーチ','早期終了']});
+  t('t-h-sparse','c-tech','課題: 過学習（表現の冗長性）',
+    '対処法: スパース表現。多くの重みを0にして疎な表現にすることで過学習を抑える。',{k:['スパース表現']});
+
+  /* --- Data Augmentation（画像） --- */
+  t('t-a-erase','c-augi','Random Erase',
+    '画像内のランダムな矩形領域を選び、その画素をランダムな値で塗りつぶすマスク手法。',{k:['ランダムな値','矩形領域']});
+  t('t-a-crop','c-augi','Random Crop',
+    '画像からランダムな位置・サイズの領域を切り出して、新たな訓練画像とする手法。',{k:['切り出して']});
+  t('t-a-contrast','c-augi','Random Contrast',
+    '画像のコントラスト（明暗の差）をランダムな倍率で変化させる手法。',{k:['コントラスト']});
+  t('t-a-bright','c-augi','Random Brightness',
+    '画像全体の明るさをランダムに変化させる手法。',{k:['明るさ']});
+  t('t-a-rotate','c-augi','Random Rotate',
+    '画像をランダムな角度で回転させる手法。',{k:['回転']});
+  t('t-a-flip','c-augi','Random Flip',
+    '画像をランダムに左右（または上下）反転させる手法。',{k:['反転']});
+  t('t-a-cutout','c-augi','Cutout',
+    '画像の中のランダムな位置を中心座標として、正方形領域を固定値0でマスクする手法。',{k:['正方形領域','固定値0']});
+  t('t-a-mixup','c-augi','Mixup',
+    '2つの訓練サンプルのペアを混合する手法。データとラベルのペアから新たな訓練サンプルを作成する。',{k:['混合','ペア']});
+  t('t-a-rand','c-augi','RandAugment',
+    'Googleから提案されたデータ拡張の手法。パラメータNとMからなる。\n・N: 何回変換を行うか\n・M: 変換の大きさ',
+    {k:['何回変換を行うか','変換の大きさ']});
+
+  /* --- EDA --- */
+  t('t-e-syn','c-augt','Synonym Replacement',
+    'ランダムに単語を同義語でn個置き換える（ストップワードは除く）。',{k:['同義語','ストップワード']});
+  t('t-e-del','c-augt','Random Deletion',
+    'ランダムに単語を確率pで削除する。',{k:['確率p']});
+  t('t-e-swap','c-augt','Random Swap',
+    'ランダムに単語の場所をn回入れ替える。',{k:['入れ替える']});
+  t('t-e-ins','c-augt','Random Insertion',
+    '文中に出現する単語の同義語をランダムにn個挿入する。',{k:['同義語','挿入']});
+
+  /* --- 半教師あり学習 --- */
+  t('t-s-semi','c-semi','半教師あり学習',
+    'ラベルありデータとラベルなしデータの両方を使って学習する手法。ラベル付けのコストを抑えつつ精度を高められる。ブートストラップ法（自己訓練・共訓練）と、グラフベースアルゴリズムに大別される。',
+    {k:['ラベルなし','ブートストラップ法','グラフベース']});
+  t('t-s-self','c-semi','自己訓練（Self Training）',
+    '① ラベルありのデータを使用してモデルを学習\n② 作成した学習済みモデルを使用して、ラベルなしデータのラベルを予測する\n③ 予測結果の中から信頼度が閾値以上の予測結果のデータを抽出し、ラベルありデータに追加する\n④ 再度モデルを学習する',
+    {k:['信頼度','閾値']});
+  t('t-s-co','c-semi','共訓練（Co-Training）',
+    '① ラベルありのデータを分割して使用し、2種類のモデルを学習\n② 作成した学習済みモデルを使用して、ラベルなしデータのラベルを予測する\n③ 予測結果の中から信頼度が閾値以上の予測結果のデータを抽出\n④ 分類器1のデータを分類器2用のデータに、分類器2のデータを分類器1用のデータに追加\n⑤ 再度モデルを学習する',
+    {k:['2種類','分類器']});
+  t('t-s-graph','c-semi','グラフベースアルゴリズム',
+    'データ分布をもとに、ラベルがないデータのラベル付けを行う手法。データとデータの類似度をもとに、ラベルありデータの近くにあるラベルなしデータのラベルを予測する。\n代表例: 半教師ありk近傍法、半教師ありSVM',
+    {k:['類似度','近く']});
+
+  /* --- 正則化 --- */
+  t('t-r-term','c-reg','正則化項',
+    '過学習を防ぐために、損失関数に加えられる関数。モデルの複雑さに罰則を科すために導入され、なめらかでないことに罰則をかけたり、パラメータの大きさに罰則を掛けたりすることで過学習を防ぐ。重みは小さい方が過学習を抑えられる。代表的なものとしてL1正則化とL2正則化がある。',
+    {k:['損失関数','罰則','小さい']});
+  t('t-r-l1','c-reg','L1正則化（ラッソ回帰）',
+    '特定のデータの重みを0にすることで、不要な特徴量を削除する正則化。制約領域のグラフは四角形になる。正則化を強めるほど0に設定される重みが増える（少ない特徴量のみを利用して学習する）。',
+    {f:'min{ f(x) + λΣ|W_{i}| }',k:['重みを0に','四角形','特徴量'],fig:'l1'});
+  t('t-r-l2','c-reg','L2正則化（リッジ回帰）',
+    '重みの大きさに応じて0に近づけて、滑らかなモデルとする正則化。制約領域のグラフは円になる。正則化を強めるほど訓練セットに対する性能は低下するが、汎化にはそのほうがいい場合がある。',
+    {f:'min{ f(x) + λ/2 Σ|W_{i}|^{2} }',k:['0に近づけて','円','汎化'],fig:'l2'});
+
+  /* --- ノイズ注入 --- */
+  t('t-n-inject','c-noise','出力目標に対するノイズの注入',
+    '教師あり学習の時に間違った教師データがあった場合など、目標値にノイズが混ざることがある。クラス分類の場合、猫の画像なのに教師ラベルが犬になっているなど。教師データが正しくないことによるモデルの精度低下を防ぎたい = ノイズに対する頑健性を高めたい。\n対策①: 間違ったデータを抽出し修正する（人間が行うためコストがかかる）\n対策②: 多少間違いのラベルがあっても正しく学習できるモデルにする（ラベル平滑化で正則化する）',
+    {k:['頑健性','ラベル平滑化']});
+  t('t-n-smooth','c-noise','ラベル平滑化',
+    '目的関数（教師ラベル）の値を1.0と0ではなく、1-ε と ε/(k-1) に設定する手法（k: 出力の数、ε: ごく小さな値）。ソフトマックス関数の正則化に用いられる。目的関数が0, 1のままだと、重みがどんどん大きくなることで局所解やオーバーフローに陥る可能性がある。',
+    {f:'正解ラベル: 1-ε\n不正解ラベル: ε/(k-1)',k:['1-ε','ε/(k-1)','オーバーフロー']});
+
+  return {version:1,categories:C,terms:T};
+}
+
+/* ==================== 初期収録クイズ（手動クイズ扱い） ==================== */
+function seedQuizzes(){
+  let n=0;
+  const q=(termId,text,choices,ans,expl)=>({id:'sq-'+(++n),termId,type:'choice',q:text,choices,answer:ans,expl:expl||'',seed:true});
+  const w=(termId,text,ans,expl)=>({id:'sq-'+(++n),termId,type:'written',q:text,modelAnswer:ans,expl:expl||'',seed:true});
+  return [
+    q('t-adam','Adamは何と何を掛け合わせたアルゴリズムか？',
+      ['モメンタムとAdaGrad/RMSprop','SGDとネステロフのモメンタム','AdaGradとバギング','モメンタムとドロップアウト'],0,
+      'Adam = Adaptive Momentum。モメンタム（移動量の考慮）とAdaGrad/RMSprop（学習率の調整）を統合した手法。'),
+    q('t-ppl','パープレキシティにおいて「優秀な言語モデル」の目安とされる値の範囲は？',
+      ['30〜60','60〜100','100以上','0〜1'],0,
+      '優秀: 30〜60、平均的: 60〜100、性能が低い: 100以上。値が低いほど良い。'),
+    q('t-ppl','パープレキシティとクロスエントロピーの関係を表す数式は？',
+      ['Perplexity = exp(Cross Entropy)','Perplexity = log(Cross Entropy)','Perplexity = 1 / Cross Entropy','Perplexity = Cross Entropy²'],0,
+      'クロスエントロピー誤差を最小化するとパープレキシティも低くなる。訓練ではクロスエントロピー、評価ではパープレキシティを使うのが一般的。'),
+    q('t-auc','ランダムな予測をする分類器のAUCスコアは？',
+      ['0.5','0','1','0.25'],0,
+      '完全な分類器はAUC=1、ランダムな予測はAUC=0.5（ROC空間の対角線に相当）。'),
+    q('t-xavier','シグモイド関数やtanh関数を活性化関数に使う際に適した重みの初期値は？',
+      ['Xavierの初期値','Heの初期値','すべて0で初期化','一様乱数[0,1]'],0,
+      'Xavierの初期値は1/√nを標準偏差としたガウス分布。ReLUにはHeの初期値（√(2/n)）を使う。'),
+    q('t-he','Heの初期値の標準偏差として正しいものは？（nは前層のノード数）',
+      ['√(2/n)','1/√n','2/n','1/n'],0,
+      'Heの初期値は√(2/n)。主にReLU関数と組み合わせて使う。Xavierは1/√n。'),
+    q('t-dsigmoid','シグモイド関数の微分を出力yで表すと？',
+      ['y(1-y)','1-y²','y-t','-t/y'],0,
+      'シグモイドの微分はy(1-y)。最大値は0.25で、勾配消失の一因になる。'),
+    q('t-dtanh','tanh関数の微分を出力yで表すと？',
+      ['1-y²','y(1-y)','1/(1-y)','y²-1'],0,
+      'tanhの微分は1-y²。他に4/(eˣ+e⁻ˣ)²や1/cosh²xの表現もある。'),
+    q('t-dsoftmax','ソフトマックス関数の微分 ∂yᵢ/∂zⱼ（i≠jのとき）は？',
+      ['-yᵢyⱼ','yᵢ(1-yᵢ)','yᵢ+yⱼ','0'],0,
+      'i=jのときはyᵢ(1-yᵢ)、i≠jのときは-yᵢyⱼ。'),
+    q('t-iter','6,000件のデータセットを500件ずつのミニバッチに分けたとき、1エポックあたりのイテレーション数は？',
+      ['12','500','6,000','120'],0,
+      'イテレーション数 = データ数 ÷ ミニバッチサイズ = 6,000 ÷ 500 = 12。'),
+    q('t-rmsprop','AdaGradの「学習率がどんどん小さくなり学習が進まなくなる」問題を解決したアルゴリズムは？',
+      ['RMSprop','SGD','モメンタム','ステップ関数'],0,
+      'RMSpropは累積二乗和ではなく移動平均（β:1-βの按分）を使い、学習率の減少を解消した。'),
+    q('t-nesterov','モメンタムとネステロフのモメンタムの違いとして正しいものは？',
+      ['ネステロフは慣性による更新後の点における勾配で更新する','ネステロフは学習率を個々に可変する','ネステロフは移動平均を使う','ネステロフはミニバッチを使わない'],0,
+      'モメンタムは更新前の点の勾配、ネステロフは慣性で先に進んだ更新後の点の勾配を使う。'),
+    q('t-r-l1','L1正則化の制約領域のグラフの形は？',
+      ['四角形','円','三角形','楕円'],0,
+      'L1（ラッソ回帰）は四角形、L2（リッジ回帰）は円。L1は角で最適解に達しやすく重みが0になりやすい。'),
+    q('t-r-l2','L2正則化の別名は？',
+      ['リッジ回帰','ラッソ回帰','ロジスティック回帰','エラスティックネット'],0,
+      'L2正則化=リッジ回帰（円）、L1正則化=ラッソ回帰（四角形）。'),
+    q('t-h-vanish','勾配消失問題への対処法として挙げられるものは？',
+      ['活性化関数や勾配降下法の選択','データの拡張','グリッドサーチ','ラベル平滑化'],0,
+      '勾配消失にはReLU系の活性化関数の採用や最適化手法の見直しが有効。'),
+    q('t-a-cutout','Cutoutの説明として正しいものは？',
+      ['ランダムな位置を中心に正方形領域を固定値0でマスクする','2つの訓練サンプルを混合する','画像をランダムな角度で回転させる','単語を同義語で置き換える'],0,
+      'Cutoutは正方形領域を固定値0でマスク。Random Eraseはランダムな値で塗りつぶす点が異なる。'),
+    q('t-a-mixup','Mixupの説明として正しいものは？',
+      ['2つの訓練サンプルのペアを混合し新たなサンプルを作る','画像の一部を0でマスクする','画像を左右反転する','明るさをランダムに変える'],0,
+      'Mixupはデータとラベルのペアを混合して新たな訓練サンプルを作成する。'),
+    q('t-a-rand','RandAugmentのパラメータNが表すものは？',
+      ['何回変換を行うか','変換の大きさ','学習率','ミニバッチサイズ'],0,
+      'N=変換回数、M=変換の大きさ。Googleから提案されたデータ拡張手法。'),
+    q('t-e-swap','EDAのRandom Swapの説明として正しいものは？',
+      ['ランダムに単語の場所をn回入れ替える','ランダムに単語を確率pで削除する','同義語をランダムにn個挿入する','単語を同義語でn個置き換える'],0,
+      'Swap=入れ替え、Deletion=削除、Insertion=挿入、Synonym Replacement=置き換え。'),
+    q('t-s-co','共訓練（Co-Training）の特徴として正しいものは？',
+      ['ラベルありデータを分割して2種類のモデルを学習し、互いの予測結果を交換する','1つのモデルで自身の予測を訓練データに追加する','類似度をもとにラベルを伝播させる','教師ラベルを平滑化する'],0,
+      '共訓練は2つの分類器が互いに高信頼度の予測データを交換する。自己訓練は1つのモデルで完結する点が異なる。'),
+    q('t-n-smooth','ラベル平滑化で不正解ラベルに設定する値は？（k: 出力の数、ε: ごく小さな値）',
+      ['ε/(k-1)','1-ε','0','1/k'],0,
+      '正解ラベル=1-ε、不正解ラベル=ε/(k-1)。0,1のままだと重みが大きくなり局所解やオーバーフローに陥る可能性がある。'),
+    q('t-variance','低バイアスを追求したときに起こりうる現象として正しいものは？',
+      ['バリアンスが高まり過学習に陥る','バリアンスも同時に下がる','学習率が自動的に下がる','勾配消失が必ず解消される'],0,
+      'バイアスとバリアンスはトレードオフの関係。低バイアスを追求するとバリアンスが高まり過学習のリスクが上がる。'),
+    q('t-bootstrap','ブートストラップ法の特長として正しいものは？',
+      ['重複を許してデータをランダムに抽出し複数のサンプルセットを生成する','重複なしでデータを均等に分割する','ラベルなしデータに擬似ラベルを付ける','重みの初期値をガウス分布から決める'],0,
+      'ブートストラップ法は「重複を許すランダム抽出」が特長。バギングの土台になる。'),
+    q('t-dsse','二乗和誤差 L = 1/2(t-y)² をyで微分すると？',
+      ['y - t','t - y','y(1-y)','-t/y'],0,
+      '∂L/∂y = y - t。予測値と正解値の差そのものになる。'),
+    q('t-bce','2値クロスエントロピー誤差が使われるタスクは？',
+      ['2値分類','多クラス分類','回帰','クラスタリング'],0,
+      '2値分類=2値クロスエントロピー、多クラス分類=クロスエントロピー、回帰=二乗和誤差。'),
+    q('t-relu','ReLU関数のデメリットとして正しいものは？',
+      ['入力が負の時は微分値が0なので重みが更新されない','出力が確率として解釈できない','計算コストが非常に高い','出力が-1から1に制限される'],0,
+      '負の入力では勾配が0になり学習が止まる（dying ReLU）。Leaky ReLUは0.01の傾きを持たせてこれを緩和する。'),
+    q('t-cod','決定係数（COD）の別名は？',
+      ['寄与率','再現率','適合率','偽陽性率'],0,
+      '決定係数は寄与率とも呼ばれ、説明変数が被説明変数をどれくらい説明できるかを0〜1で表す。1に近いほど精度が高い。'),
+    q('t-roc','ROCカーブにおいて理想的な点はどこか？',
+      ['左上','右下','右上','原点'],0,
+      '左上=低い偽陽性率かつ高い真陽性率。X軸が偽陽性率、Y軸が真陽性率。'),
+    w('t-bagging','バギングとブースティングの違いを、学習の進め方と低減できる誤差の観点から説明せよ。',
+      'バギングはブートストラップ法で複数のデータセットを作り、複数のモデルを並列に学習して統合する手法で、バリアンスを低くする。ブースティングはベースモデルの間違った予測に重みを加味して次のモデルを逐次的に改善する手法で、バイアスを低くする。'),
+    w('t-adagrad','AdaGradの問題点と、RMSpropによる解決策を説明せよ。',
+      'AdaGradは勾配の累積二乗和h[t]が増え続けるため、時間が経つと学習率がどんどん小さくなり学習が進まなくなる。RMSpropは累積二乗和ではなく、過去の累積と最新の情報をβ:1-βで按分する移動平均を使うことで学習率の減少を解消した。'),
+    w('t-n-smooth','ラベル平滑化の目的と設定方法を説明せよ。',
+      '教師ラベルが0,1のままだと重みが大きくなり局所解やオーバーフローに陥る可能性があるため、正解ラベルを1-ε、不正解ラベルをε/(k-1)に設定して正則化する（k:出力の数、ε:ごく小さな値）。誤ったラベルへの頑健性も高まる。'),
+  ];
+}
+/* ==================== ユーティリティ ==================== */
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=p=>(p||'id')+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const daysBetween=(iso,now)=>Math.max(0,(now-new Date(iso).getTime())/86400000);
+function toast(msg,bad){const t=document.createElement('div');t.className='toast'+(bad?' ng':'');t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>t.remove(),3200);}
+
+/* 数式・本文の整形: エスケープ → ^{}/_{}・^x/_x を sup/sub に変換 */
+function fmtMath(raw){
+  let s=esc(raw);
+  s=s.replace(/\^\{([^}]+)\}/g,'<sup>$1</sup>').replace(/_\{([^}]+)\}/g,'<sub>$1</sub>');
+  s=s.replace(/\^([+\-−]?[0-9A-Za-zθμσβεαγλπŵ̂]+)/g,'<sup>$1</sup>');
+  return s;
+}
+/* 定義・補足の表示: キーポイントを<mark>で強調しつつ数式変換 */
+function fmtDef(raw,kps){
+  let s=esc(raw);
+  (kps||[]).slice().sort((a,b)=>b.length-a.length).forEach(kp=>{
+    if(!kp)return;
+    const e=esc(kp).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    s=s.replace(new RegExp(e,'g'),m=>'\u0001'+m+'\u0002');
+  });
+  s=s.replace(/\^\{([^}]+)\}/g,'<sup>$1</sup>').replace(/_\{([^}]+)\}/g,'<sub>$1</sub>');
+  s=s.replace(/\u0001/g,'<mark>').replace(/\u0002/g,'</mark>');
+  return s;
+}
+
+/* ==================== ストレージ ==================== */
+const LS={contents:'mlstudy.contents',quizzes:'mlstudy.quizzes',weak:'mlstudy.weak',stats:'mlstudy.stats',settings:'mlstudy.settings',pool:'mlstudy.pool'};
+function load(key,fallback){try{const v=localStorage.getItem(key);return v?JSON.parse(v):fallback;}catch(e){return fallback;}}
+function save(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){toast('保存に失敗しました（容量不足の可能性）',true);}}
+
+let DB={contents:null,quizzes:null,weak:null,stats:null,settings:null,pool:null};
+function initDB(){
+  DB.contents=load(LS.contents,null);
+  if(!DB.contents){DB.contents=seedContents();save(LS.contents,DB.contents);}
+  DB.quizzes=load(LS.quizzes,null);
+  if(!DB.quizzes){DB.quizzes=seedQuizzes();save(LS.quizzes,DB.quizzes);}
+  DB.weak=load(LS.weak,{terms:{},quizzes:{}});
+  DB.stats=load(LS.stats,{sessions:[],terms:{}});
+  DB.settings=Object.assign({theme:'auto',apiKey:'',model:'gemini-2.5-flash',useGemini:true},load(LS.settings,{}));
+  DB.pool=load(LS.pool,{});
+}
+const saveContents=()=>save(LS.contents,DB.contents);
+const saveQuizzes=()=>save(LS.quizzes,DB.quizzes);
+const saveWeak=()=>save(LS.weak,DB.weak);
+const saveStats=()=>save(LS.stats,DB.stats);
+const saveSettings=()=>save(LS.settings,DB.settings);
+const savePool=()=>save(LS.pool,DB.pool);
+
+const getCat=id=>DB.contents.categories.find(c=>c.id===id);
+const getTerm=id=>DB.contents.terms.find(t=>t.id===id);
+const termsOf=catId=>DB.contents.terms.filter(t=>t.cat===catId).sort((a,b)=>a.order-b.order);
+const quizzesOf=termId=>DB.quizzes.filter(q=>q.termId===termId);
+
+/* ==================== SVG 概念図 ==================== */
+const SVGNS='http://www.w3.org/2000/svg';
+function plotFn(fn,opts){
+  const o=Object.assign({xmin:-5,xmax:5,ymin:-1.4,ymax:1.4,w:320,h:190,label:''},opts);
+  const px=x=>( (x-o.xmin)/(o.xmax-o.xmin) )*(o.w-30)+20;
+  const py=y=>o.h-18-((y-o.ymin)/(o.ymax-o.ymin))*(o.h-34);
+  let d='';const n=180;
+  for(let i=0;i<=n;i++){const x=o.xmin+(o.xmax-o.xmin)*i/n;const y=Math.max(o.ymin,Math.min(o.ymax,fn(x)));d+=(i?'L':'M')+px(x).toFixed(1)+' '+py(y).toFixed(1)+' ';}
+  const gy=[];for(const yv of (o.gy||[])) gy.push(`<line x1="20" x2="${o.w-10}" y1="${py(yv)}" y2="${py(yv)}" stroke="var(--line2)" stroke-dasharray="3 3"/><text x="${o.w-8}" y="${py(yv)+4}" font-size="10" fill="var(--ink2)" text-anchor="start">${yv}</text>`);
+  return `<svg viewBox="0 0 ${o.w} ${o.h}" width="${o.w}" role="img" aria-label="${esc(o.label)}のグラフ">
+    <line x1="20" x2="${o.w-10}" y1="${py(0)}" y2="${py(0)}" stroke="var(--line2)"/>
+    <line x1="${px(0)}" x2="${px(0)}" y1="8" y2="${o.h-18}" stroke="var(--line2)"/>
+    ${gy.join('')}
+    <path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round"/>
+    <text x="${o.w/2}" y="${o.h-3}" font-size="11" fill="var(--ink2)" text-anchor="middle">${esc(o.label)}</text>
+  </svg>`;
+}
+function figEnsemble(kind){
+  const box=(x,y,w,h,label,fill)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7" fill="${fill||'var(--surface2)'}" stroke="var(--line2)"/><text x="${x+w/2}" y="${y+h/2+4}" font-size="11.5" fill="var(--ink)" text-anchor="middle">${label}</text>`;
+  const ar=(x1,y1,x2,y2)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--ink2)" stroke-width="1.4" marker-end="url(#arr)"/>`;
+  const defs=`<defs><marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L8 4L0 8z" fill="var(--ink2)"/></marker></defs>`;
+  if(kind==='bagging')return `<svg viewBox="0 0 440 200" width="440" role="img" aria-label="バギングの模式図">${defs}
+    ${box(10,80,90,40,'元データ','var(--accent-soft)')}
+    ${box(160,20,120,34,'サンプル①')} ${box(160,83,120,34,'サンプル②')} ${box(160,146,120,34,'サンプル③')}
+    ${ar(100,95,158,37)} ${ar(100,100,158,100)} ${ar(100,105,158,163)}
+    ${box(310,20,70,34,'モデル①')} ${box(310,83,70,34,'モデル②')} ${box(310,146,70,34,'モデル③')}
+    ${ar(280,37,308,37)} ${ar(280,100,308,100)} ${ar(280,163,308,163)}
+    ${ar(380,37,410,92)} ${ar(380,100,410,100)} ${ar(380,163,410,108)}
+    <text x="415" y="96" font-size="11" fill="var(--ink)">多数決/</text><text x="415" y="110" font-size="11" fill="var(--ink)">平均</text>
+    <text x="220" y="14" font-size="10.5" fill="var(--ink2)">ブートストラップ法（重複を許す抽出）で並列に学習</text></svg>`;
+  if(kind==='boosting')return `<svg viewBox="0 0 440 130" width="440" role="img" aria-label="ブースティングの模式図">${defs}
+    ${box(10,45,80,38,'モデル①')} ${box(175,45,80,38,'モデル②')} ${box(340,45,80,38,'モデル③')}
+    ${ar(90,64,173,64)} ${ar(255,64,338,64)}
+    <text x="132" y="40" font-size="10.5" fill="var(--ng)" text-anchor="middle">誤答に重み</text>
+    <text x="297" y="40" font-size="10.5" fill="var(--ng)" text-anchor="middle">誤答に重み</text>
+    <text x="220" y="118" font-size="10.5" fill="var(--ink2)" text-anchor="middle">間違った予測に焦点を当て、逐次的に改善（直列）</text></svg>`;
+  return `<svg viewBox="0 0 440 190" width="440" role="img" aria-label="スタッキングの模式図">${defs}
+    ${box(10,15,90,34,'SVM')} ${box(10,78,90,34,'ロジスティック回帰')} ${box(10,141,90,34,'決定木 など')}
+    ${box(180,78,110,34,'予測値を集約','var(--accent-soft)')}
+    ${ar(100,32,178,88)} ${ar(100,95,178,95)} ${ar(100,158,178,102)}
+    ${box(340,78,90,34,'メタ学習器')}
+    ${ar(290,95,338,95)}
+    <text x="385" y="132" font-size="10.5" fill="var(--ink2)" text-anchor="middle">最良の組合せを学習</text></svg>`;
+}
+function figROC(){
+  return `<svg viewBox="0 0 300 240" width="300" role="img" aria-label="ROCカーブの概形">
+    <line x1="45" y1="200" x2="270" y2="200" stroke="var(--ink2)"/>
+    <line x1="45" y1="200" x2="45" y2="20" stroke="var(--ink2)"/>
+    <line x1="45" y1="200" x2="270" y2="20" stroke="var(--line2)" stroke-dasharray="4 4"/>
+    <path d="M45 200 C 60 90, 110 40, 270 20" fill="none" stroke="var(--accent)" stroke-width="2.6"/>
+    <circle cx="52" cy="30" r="5" fill="var(--ok)"/>
+    <text x="62" y="30" font-size="11" fill="var(--ok)">理想的な点（左上）</text>
+    <text x="200" y="130" font-size="10.5" fill="var(--ink2)" transform="rotate(-38 200 130)">AUC=0.5（ランダム）</text>
+    <text x="157" y="222" font-size="11.5" fill="var(--ink)" text-anchor="middle">偽陽性率 →</text>
+    <text x="20" y="110" font-size="11.5" fill="var(--ink)" text-anchor="middle" transform="rotate(-90 20 110)">真陽性率 →</text>
+  </svg>`;
+}
+function figReg(kind){
+  const common=(shape,name)=>`<svg viewBox="0 0 260 220" width="260" role="img" aria-label="${name}の制約領域">
+    <line x1="20" y1="110" x2="240" y2="110" stroke="var(--line2)"/>
+    <line x1="130" y1="10" x2="130" y2="210" stroke="var(--line2)"/>
+    <ellipse cx="196" cy="52" rx="52" ry="26" fill="none" stroke="var(--ink2)" stroke-dasharray="3 3" transform="rotate(-24 196 52)"/>
+    <ellipse cx="196" cy="52" rx="30" ry="14" fill="none" stroke="var(--ink2)" stroke-dasharray="3 3" transform="rotate(-24 196 52)"/>
+    ${shape}
+    <text x="196" y="20" font-size="10.5" fill="var(--ink2)" text-anchor="middle">損失関数の等高線</text>
+    <text x="130" y="218" font-size="11" fill="var(--ink)" text-anchor="middle">${name}: 制約領域は${kind==='l1'?'四角形':'円'}</text>
+  </svg>`;
+  if(kind==='l1')return common(`<path d="M130 55 L185 110 L130 165 L75 110 Z" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/><circle cx="130" cy="57" r="4.5" fill="var(--ng)"/><text x="120" y="46" font-size="10.5" fill="var(--ng)" text-anchor="end">角で解ける→重みが0に</text>`,'L1正則化');
+  return common(`<circle cx="130" cy="110" r="55" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/><circle cx="163" cy="66" r="4.5" fill="var(--ng)"/><text x="150" y="52" font-size="10.5" fill="var(--ng)" text-anchor="end">円周上で解ける→0に近づく</text>`,'L2正則化');
+}
+function figureFor(fig){
+  switch(fig){
+    case 'step':return plotFn(x=>x>=0?1:0,{ymin:-.3,ymax:1.4,gy:[1],label:'ステップ関数'});
+    case 'sigmoid':return plotFn(x=>1/(1+Math.exp(-x)),{ymin:-.3,ymax:1.4,gy:[1],label:'シグモイド関数（0〜1）'});
+    case 'tanh':return plotFn(Math.tanh,{ymin:-1.5,ymax:1.5,gy:[1,-1],label:'tanh関数（-1〜1）'});
+    case 'relu':return plotFn(x=>Math.max(0,x),{xmin:-4,xmax:4,ymin:-1,ymax:4,label:'ReLU関数'});
+    case 'lrelu':return plotFn(x=>x>0?x:0.01*x*20,{xmin:-4,xmax:4,ymin:-1.5,ymax:4,label:'Leaky ReLU関数（負側の傾きを誇張表示）'});
+    case 'bagging':return figEnsemble('bagging');
+    case 'boosting':return figEnsemble('boosting');
+    case 'stacking':return figEnsemble('stacking');
+    case 'roc':return figROC();
+    case 'l1':return figReg('l1');
+    case 'l2':return figReg('l2');
+    default:return '';
+  }
+}
+
+/* ==================== モーダル ==================== */
+function openModal(html,wide){
+  const bg=document.createElement('div');bg.className='modal-bg';
+  bg.innerHTML=`<div class="modal${wide?' wide':''}" role="dialog" aria-modal="true">${html}</div>`;
+  bg.addEventListener('mousedown',e=>{if(e.target===bg)closeModal();});
+  $('#modalRoot').appendChild(bg);
+  const f=bg.querySelector('input,textarea,select,button');if(f)setTimeout(()=>f.focus(),50);
+  return bg;
+}
+function closeModal(){const m=$('#modalRoot');if(m.lastChild)m.removeChild(m.lastChild);}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#modalRoot').children.length)closeModal();});
+/* ==================== 学習ビュー ==================== */
+const CARET='<svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
+const TCARET='<svg class="tcaret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 18l6-6-6-6"/></svg>';
+
+function renderLearn(){
+  renderTOC();
+  const area=$('#contentArea');
+  const cats=DB.contents.categories.slice().sort((a,b)=>a.order-b.order);
+  area.innerHTML=cats.map((c,i)=>{
+    const ts=termsOf(c.id);
+    return `<section class="cat-block" id="cat-${c.id}">
+      <details class="cat" open data-cat="${c.id}">
+        <summary><span class="cat-no">${String(i+1).padStart(2,'0')}</span><span class="cat-name">${esc(c.name)}</span><span class="cat-meta">${ts.length}件</span>${CARET}</summary>
+        <div class="cat-body">
+          ${ts.map(t=>renderTermCard(t)).join('')||'<p class="muted" style="padding:10px 4px">この分類にはまだ用語がありません。</p>'}
+          <div class="cat-actions">
+            <button class="btn sm ghost" onclick="openTermForm(null,'${c.id}')">＋ 用語を追加</button>
+            <button class="btn sm ghost" onclick="openCatForm('${c.id}')">分類名を編集</button>
+            <button class="btn sm ghost" style="color:var(--ng)" onclick="deleteCat('${c.id}')">分類を削除</button>
+          </div>
+        </div>
+      </details>
+    </section>`;
+  }).join('')||'<p class="muted">コンテンツがありません。「カテゴリ追加」から始めるか、設定から初期コンテンツを復元してください。</p>';
+  applySearch();
+}
+function renderTermCard(t){
+  const nq=quizzesOf(t.id).length;
+  const fig=t.fig?`<div class="fig-box">${figureFor(t.fig)}</div>`:'';
+  return `<details class="term" open id="term-${t.id}" data-term="${t.id}">
+    <summary>${TCARET}<span class="term-name">${esc(t.name)}</span>${nq?`<span class="term-sub">✎ 手動クイズ ${nq}</span>`:''}</summary>
+    <div class="term-body">
+      <div class="term-def">${fmtDef(t.def,t.kps)}</div>
+      ${t.formula?`<span class="kv-label">数式</span><div class="formula">${fmtMath(t.formula)}</div>`:''}
+      ${t.py?`<span class="kv-label">PYTHON</span><div class="pycode">${esc(t.py)}</div>`:''}
+      ${t.note?`<div class="note-box">※ ${fmtDef(t.note,t.kps)}</div>`:''}
+      ${fig}
+      <div class="term-foot">
+        <button class="btn sm ghost" onclick="openTermForm('${t.id}')">編集</button>
+        <button class="btn sm ghost" onclick="openQuizManager('${t.id}')">手動クイズ${nq?`（${nq}）`:''}</button>
+        <button class="btn sm ghost" style="color:var(--ng)" onclick="deleteTerm('${t.id}')">削除</button>
+      </div>
+    </div>
+  </details>`;
+}
+function renderTOC(){
+  const cats=DB.contents.categories.slice().sort((a,b)=>a.order-b.order);
+  $('#tocList').innerHTML=cats.map((c,i)=>`<div class="toc-cat" data-cat="${c.id}">
+    <a href="#learn" onclick="jumpToCat('${c.id}');return false;">${String(i+1).padStart(2,'0')}　${esc(c.name)}</a>
+    <ul class="toc-terms">${termsOf(c.id).map(t=>`<li><a href="#learn" onclick="jumpToTerm('${t.id}');return false;">${esc(t.name)}</a></li>`).join('')}</ul>
+  </div>`).join('');
+}
+function jumpToCat(id){
+  const el=$('#cat-'+id);if(!el)return;
+  el.querySelector('details.cat').open=true;
+  el.scrollIntoView({block:'start'});
+  closeTocDrawer();
+}
+function jumpToTerm(id,flash){
+  switchView('learn');
+  const el=$('#term-'+id);if(!el)return;
+  const cat=el.closest('details.cat');if(cat)cat.open=true;
+  el.open=true;
+  setTimeout(()=>{el.scrollIntoView({block:'center'});if(flash){el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');}},60);
+  closeTocDrawer();
+}
+function closeTocDrawer(){$('#toc').classList.remove('open');}
+
+/* スクロール連動: 現在表示中カテゴリのハイライト */
+let scrollTick=false;
+window.addEventListener('scroll',()=>{
+  if(!$('#view-learn').classList.contains('on'))return;
+  if(scrollTick)return;scrollTick=true;
+  requestAnimationFrame(()=>{
+    scrollTick=false;
+    let cur=null;
+    $$('.cat-block').forEach(b=>{if(b.getBoundingClientRect().top<130)cur=b.id.replace('cat-','');});
+    $$('.toc-cat').forEach(el=>el.classList.toggle('cur',el.dataset.cat===cur));
+  });
+});
+
+/* 検索 */
+function applySearch(){
+  const q=($('#searchInput').value||'').trim().toLowerCase();
+  const cats=DB.contents.categories;
+  cats.forEach(c=>{
+    const block=$('#cat-'+c.id);if(!block)return;
+    let anyVisible=false;
+    termsOf(c.id).forEach(t=>{
+      const el=$('#term-'+t.id);if(!el)return;
+      const hay=(t.name+' '+t.def+' '+(t.note||'')+' '+(t.formula||'')).toLowerCase();
+      const hit=!q||hay.includes(q)||c.name.toLowerCase().includes(q);
+      el.classList.toggle('hidden',!hit);
+      if(hit)anyVisible=true;
+      if(q&&hit)el.open=true;
+    });
+    block.classList.toggle('hidden',!anyVisible&&!!q);
+    if(q&&anyVisible)block.querySelector('details.cat').open=true;
+  });
+  $$('.toc-cat').forEach(el=>{
+    const c=cats.find(x=>x.id===el.dataset.cat);if(!c)return;
+    const anyT=termsOf(c.id).some(t=>{
+      const hay=(t.name+' '+t.def).toLowerCase();
+      return !q||hay.includes(q)||c.name.toLowerCase().includes(q);
+    });
+    el.classList.toggle('hidden',!!q&&!anyT);
+  });
+}
+
+/* ==================== CRUD ==================== */
+function openCatForm(catId){
+  const c=catId?getCat(catId):null;
+  const bg=openModal(`<h2>${c?'分類名を編集':'カテゴリを追加'}</h2>
+    <div class="field"><label>カテゴリ名</label><input id="fCatName" value="${c?esc(c.name):''}" placeholder="例: 畳み込みニューラルネットワーク"></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" id="fCatSave">保存</button></div>`);
+  bg.querySelector('#fCatSave').onclick=()=>{
+    const name=bg.querySelector('#fCatName').value.trim();
+    if(!name){toast('カテゴリ名を入力してください',true);return;}
+    if(c){c.name=name;}
+    else DB.contents.categories.push({id:uid('c'),name,order:DB.contents.categories.length});
+    saveContents();closeModal();renderLearn();renderQuizSetup();toast(c?'分類名を更新しました':'カテゴリを追加しました');
+  };
+}
+function deleteCat(catId){
+  const c=getCat(catId);const n=termsOf(catId).length;
+  if(!confirm(`カテゴリ「${c.name}」を削除しますか？\n含まれる用語 ${n}件、その手動クイズ・弱点記録・生成済み問題も削除されます。`))return;
+  termsOf(catId).forEach(t=>removeTermData(t.id));
+  DB.contents.categories=DB.contents.categories.filter(x=>x.id!==catId);
+  saveContents();renderLearn();renderQuizSetup();renderReview();toast('カテゴリを削除しました');
+}
+function removeTermData(termId){
+  DB.contents.terms=DB.contents.terms.filter(t=>t.id!==termId);
+  const qs=DB.quizzes.filter(q=>q.termId===termId).map(q=>q.id);
+  DB.quizzes=DB.quizzes.filter(q=>q.termId!==termId);
+  delete DB.weak.terms[termId];
+  qs.forEach(id=>delete DB.weak.quizzes[id]);
+  delete DB.pool[termId];
+  saveQuizzes();saveWeak();savePool();
+}
+function deleteTerm(termId){
+  const t=getTerm(termId);
+  if(!confirm(`用語「${t.name}」を削除しますか？\n紐づく手動クイズ・弱点記録・生成済み問題も削除されます。`))return;
+  removeTermData(termId);saveContents();renderLearn();renderReview();toast('用語を削除しました');
+}
+function openTermForm(termId,defaultCat){
+  const t=termId?getTerm(termId):null;
+  const cats=DB.contents.categories.slice().sort((a,b)=>a.order-b.order);
+  const bg=openModal(`<h2>${t?'用語を編集':'用語を追加'}</h2>
+    <div class="field"><label>カテゴリ</label><select id="fCat">${cats.map(c=>`<option value="${c.id}" ${((t&&t.cat===c.id)||(!t&&c.id===defaultCat))?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+    <div class="field"><label>用語名 *</label><input id="fName" value="${t?esc(t.name):''}" placeholder="例: ドロップアウト"></div>
+    <div class="field"><label>定義・説明 *</label><textarea id="fDef" rows="5" placeholder="この用語の説明を入力…">${t?esc(t.def):''}</textarea></div>
+    <div class="field"><label>数式（任意）</label><textarea id="fFormula" rows="2" placeholder="例: f(x) = 1 / (1 + e^{-x})">${t?esc(t.formula):''}</textarea><div class="hint">^{ } で上付き、_{ } で下付きになります（例: e^{-x}, W_{i}）。</div></div>
+    <div class="field"><label>Pythonコード（任意）</label><textarea id="fPy" rows="2">${t?esc(t.py):''}</textarea></div>
+    <div class="field"><label>補足・注意点（任意）</label><textarea id="fNote" rows="2">${t?esc(t.note):''}</textarea></div>
+    <div class="field"><label>キーポイント（カンマ区切り・任意）</label><input id="fKps" value="${t?esc(t.kps.join('、')):''}" placeholder="例: バリアンス、過学習"><div class="hint">定義文・補足の中に登場する重要フレーズを登録すると、その箇所が穴埋め問題になります。</div></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" id="fSave">保存</button></div>`);
+  bg.querySelector('#fSave').onclick=()=>{
+    const name=bg.querySelector('#fName').value.trim(), def=bg.querySelector('#fDef').value.trim();
+    if(!name||!def){toast('用語名と定義は必須です',true);return;}
+    const kps=bg.querySelector('#fKps').value.split(/[,、，]/).map(s=>s.trim()).filter(Boolean);
+    const data={cat:bg.querySelector('#fCat').value,name,def,formula:bg.querySelector('#fFormula').value.trim(),py:bg.querySelector('#fPy').value.trim(),note:bg.querySelector('#fNote').value.trim(),kps};
+    if(t){Object.assign(t,data);delete DB.pool[t.id];savePool();}
+    else DB.contents.terms.push(Object.assign({id:uid('t'),fig:null,order:DB.contents.terms.length},data));
+    saveContents();closeModal();renderLearn();renderReview();toast(t?'用語を更新しました（AI生成問題は再生成されます）':'用語を追加しました');
+  };
+}
+
+/* ==================== 手動クイズ管理 ==================== */
+function openQuizManager(termId){
+  const t=getTerm(termId);
+  const bg=openModal(`<h2>手動クイズ — ${esc(t.name)}</h2><div id="mqList"></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">閉じる</button><button class="btn pri" onclick="openQuizForm('${termId}',null)">＋ クイズを追加</button></div>`,true);
+  renderQuizManagerList(termId,bg);
+}
+function renderQuizManagerList(termId,bg){
+  const list=(bg||document).querySelector('#mqList');
+  const qs=quizzesOf(termId);
+  list.innerHTML=qs.length?qs.map(q=>`<div class="mq-item">
+      <div class="q">${esc(q.q)}</div>
+      <div class="meta">${q.type==='choice'?'4択　正解: '+esc(q.choices[q.answer]):'記述式（自己採点）'}${q.seed?'　<span class="chip">初期収録</span>':''}</div>
+      <div class="row" style="margin-top:7px"><button class="btn sm ghost" onclick="openQuizForm('${termId}','${q.id}')">編集</button><button class="btn sm ghost" style="color:var(--ng)" onclick="deleteQuiz('${termId}','${q.id}')">削除</button></div>
+    </div>`).join(''):'<p class="muted">この用語の手動クイズはまだありません。自動生成では作れない角度の問題（比較・数値・理由など）を追加できます。</p>';
+}
+function deleteQuiz(termId,quizId){
+  if(!confirm('このクイズを削除しますか？'))return;
+  DB.quizzes=DB.quizzes.filter(q=>q.id!==quizId);
+  delete DB.weak.quizzes[quizId];
+  saveQuizzes();saveWeak();renderQuizManagerList(termId);renderLearn();renderReview();toast('クイズを削除しました');
+}
+function openQuizForm(termId,quizId){
+  const q=quizId?DB.quizzes.find(x=>x.id===quizId):null;
+  const type=q?q.type:'choice';
+  const bg=openModal(`<h2>${q?'クイズを編集':'クイズを追加'}</h2>
+    <div class="field"><label>形式</label><select id="qType"><option value="choice" ${type==='choice'?'selected':''}>4択</option><option value="written" ${type==='written'?'selected':''}>記述式（自己採点）</option></select></div>
+    <div class="field"><label>問題文 *</label><textarea id="qText" rows="3">${q?esc(q.q):''}</textarea></div>
+    <div id="qChoiceFields" class="${type==='written'?'hidden':''}">
+      <div class="field"><label>正解の選択肢 *</label><input id="qAns" value="${q&&q.type==='choice'?esc(q.choices[q.answer]):''}"></div>
+      <div class="field"><label>ダミー選択肢 1 *</label><input id="qD1" value="${q&&q.type==='choice'?esc(q.choices.filter((_,i)=>i!==q.answer)[0]||''):''}"></div>
+      <div class="field"><label>ダミー選択肢 2 *</label><input id="qD2" value="${q&&q.type==='choice'?esc(q.choices.filter((_,i)=>i!==q.answer)[1]||''):''}"></div>
+      <div class="field"><label>ダミー選択肢 3 *</label><input id="qD3" value="${q&&q.type==='choice'?esc(q.choices.filter((_,i)=>i!==q.answer)[2]||''):''}"></div>
+    </div>
+    <div id="qWrittenFields" class="${type==='choice'?'hidden':''}">
+      <div class="field"><label>模範解答 *</label><textarea id="qModel" rows="3">${q&&q.type==='written'?esc(q.modelAnswer):''}</textarea></div>
+    </div>
+    <div class="field"><label>解説（任意）</label><textarea id="qExpl" rows="2">${q?esc(q.expl||''):''}</textarea></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" id="qSave">保存</button></div>`);
+  bg.querySelector('#qType').onchange=e=>{
+    bg.querySelector('#qChoiceFields').classList.toggle('hidden',e.target.value==='written');
+    bg.querySelector('#qWrittenFields').classList.toggle('hidden',e.target.value==='choice');
+  };
+  bg.querySelector('#qSave').onclick=()=>{
+    const ty=bg.querySelector('#qType').value, text=bg.querySelector('#qText').value.trim(), expl=bg.querySelector('#qExpl').value.trim();
+    if(!text){toast('問題文を入力してください',true);return;}
+    let data;
+    if(ty==='choice'){
+      const ans=bg.querySelector('#qAns').value.trim(), ds=[bg.querySelector('#qD1').value.trim(),bg.querySelector('#qD2').value.trim(),bg.querySelector('#qD3').value.trim()];
+      if(!ans||ds.some(d=>!d)){toast('正解とダミー3つをすべて入力してください',true);return;}
+      data={type:'choice',q:text,choices:[ans,...ds],answer:0,expl};
+    }else{
+      const model=bg.querySelector('#qModel').value.trim();
+      if(!model){toast('模範解答を入力してください',true);return;}
+      data={type:'written',q:text,modelAnswer:model,expl};
+    }
+    if(q){Object.assign(q,data);if(ty!==q.type)delete DB.weak.quizzes[q.id];}
+    else DB.quizzes.push(Object.assign({id:uid('q'),termId},data));
+    saveQuizzes();saveWeak();closeModal();
+    if($('#mqList'))renderQuizManagerList(termId);
+    renderLearn();toast('クイズを保存しました');
+  };
+}
+
+/* ==================== テキストから一括追加（Gemini） ==================== */
+function openBulkImport(){
+  if(!DB.settings.apiKey||!DB.settings.useGemini){
+    openModal(`<h2>テキストから一括追加</h2><p>この機能はGemini APIを使ってテキストを用語カードに自動整形します。<br>設定タブでAPIキーを登録し、Gemini機能をONにすると使えます。</p>
+      <div class="modal-foot"><button class="btn" onclick="closeModal()">閉じる</button><button class="btn pri" onclick="closeModal();switchView('settings')">設定を開く</button></div>`);
+    return;
+  }
+  const bg=openModal(`<h2>テキストから一括追加</h2>
+    <p class="muted" style="margin:0 0 10px">勉強ノートなどの自由なテキストを貼り付けると、AIがカテゴリと用語カードに整形します。取り込み前に必ずプレビューで確認・修正できます。</p>
+    <textarea id="bulkText" rows="14" placeholder="# 畳み込みニューラルネットワーク&#10;・畳み込み層&#10;フィルタを使って特徴マップを抽出する…"></textarea>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" id="bulkGo">整形する</button></div>`,true);
+  bg.querySelector('#bulkGo').onclick=async()=>{
+    const text=bg.querySelector('#bulkText').value.trim();
+    if(!text){toast('テキストを貼り付けてください',true);return;}
+    const btn=bg.querySelector('#bulkGo');btn.disabled=true;btn.textContent='整形中…';
+    try{
+      const chunks=splitTextForImport(text);
+      const all=[];
+      for(let i=0;i<chunks.length;i++){
+        btn.textContent=`整形中… (${i+1}/${chunks.length})`;
+        const res=await geminiStructure(chunks[i]);
+        (res.categories||[]).forEach(c=>all.push(c));
+      }
+      if(!all.length)throw new Error('用語を抽出できませんでした');
+      closeModal();openImportPreview(all);
+    }catch(e){
+      toast('整形に失敗しました: '+(e.message||e),true);
+      btn.disabled=false;btn.textContent='整形する';
+    }
+  };
+}
+function splitTextForImport(text){
+  const blocks=text.split(/\n(?=#\s)/);
+  const chunks=[];let cur='';
+  for(const b of blocks){
+    if(cur&&(cur.length+b.length)>2600){chunks.push(cur);cur=b;}
+    else cur+=(cur?'\n':'')+b;
+  }
+  if(cur)chunks.push(cur);
+  return chunks;
+}
+function openImportPreview(cats){
+  const existing=DB.contents.categories;
+  const html=cats.map((c,ci)=>{
+    const match=existing.find(x=>x.name===c.name);
+    return `<div class="imp-cat" data-ci="${ci}">
+      <div class="imp-cat-head">
+        <label style="font-size:12px;font-weight:700;color:var(--ink2)">カテゴリ名</label>
+        <input class="imp-cat-name" value="${esc(c.name||'')}" style="flex:1;min-width:180px">
+        ${match?`<label style="font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" class="imp-merge" checked style="accent-color:var(--accent)">既存カテゴリ「${esc(match.name)}」に統合</label>`:''}
+      </div>
+      ${(c.terms||[]).map((t,ti)=>`<div class="imp-term" data-ti="${ti}">
+        <div class="row"><label style="font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" class="imp-inc" checked style="accent-color:var(--accent)">取り込む</label>
+        <input class="imp-name" value="${esc(t.name||'')}" placeholder="用語名" style="flex:1;font-weight:700"></div>
+        <textarea class="imp-def" rows="3" placeholder="定義">${esc(t.definition||'')}</textarea>
+        <div class="row" style="margin-top:6px"><input class="imp-formula" value="${esc(t.formula||'')}" placeholder="数式（任意）" style="flex:1"></div>
+        <div class="row" style="margin-top:6px"><input class="imp-kps" value="${esc((t.keypoints||[]).join('、'))}" placeholder="キーポイント（カンマ区切り・任意）" style="flex:1"></div>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+  const bg=openModal(`<h2>取り込みプレビュー — 確認・修正してから確定してください</h2>
+    <div style="max-height:56vh;overflow-y:auto;padding-right:4px">${html}</div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" id="impConfirm">この内容で取り込む</button></div>`,true);
+  bg.querySelector('#impConfirm').onclick=()=>{
+    let added=0;
+    bg.querySelectorAll('.imp-cat').forEach(catEl=>{
+      const name=catEl.querySelector('.imp-cat-name').value.trim();if(!name)return;
+      const mergeChk=catEl.querySelector('.imp-merge');
+      let cat=(mergeChk&&mergeChk.checked)?DB.contents.categories.find(x=>x.name===name):null;
+      const termEls=Array.from(catEl.querySelectorAll('.imp-term')).filter(te=>te.querySelector('.imp-inc').checked&&te.querySelector('.imp-name').value.trim()&&te.querySelector('.imp-def').value.trim());
+      if(!termEls.length)return;
+      if(!cat){cat={id:uid('c'),name,order:DB.contents.categories.length};DB.contents.categories.push(cat);}
+      termEls.forEach(te=>{
+        DB.contents.terms.push({id:uid('t'),cat:cat.id,name:te.querySelector('.imp-name').value.trim(),
+          def:te.querySelector('.imp-def').value.trim(),formula:te.querySelector('.imp-formula').value.trim(),
+          py:'',note:'',kps:te.querySelector('.imp-kps').value.split(/[,、，]/).map(s=>s.trim()).filter(Boolean),fig:null,order:DB.contents.terms.length});
+        added++;
+      });
+    });
+    saveContents();closeModal();renderLearn();renderQuizSetup();
+    toast(added?`${added}件の用語を取り込みました。クイズはこの内容から自動生成されます`:'取り込む用語がありませんでした',!added);
+  };
+}
+/* ==================== Gemini API ==================== */
+async function callGemini(userText,systemText){
+  const key=DB.settings.apiKey, model=(DB.settings.model||'gemini-2.5-flash').trim();
+  if(!key)throw new Error('APIキーが未設定です');
+  const body={contents:[{role:'user',parts:[{text:userText}]}],generationConfig:{responseMimeType:'application/json',temperature:0.7}};
+  if(systemText)body.systemInstruction={parts:[{text:systemText}]};
+  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`,
+    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok){
+    let msg='HTTP '+res.status;
+    try{const j=await res.json();if(j.error&&j.error.message)msg=j.error.message.slice(0,120);}catch(e){}
+    throw new Error(msg);
+  }
+  const j=await res.json();
+  const text=(((j.candidates||[])[0]||{}).content||{}).parts?.map(p=>p.text||'').join('')||'';
+  if(!text)throw new Error('応答が空でした');
+  const clean=text.replace(/^\s*```(?:json)?/,'').replace(/```\s*$/,'').trim();
+  return JSON.parse(clean);
+}
+/* 用語カード整形（一括取り込み用） */
+async function geminiStructure(chunk){
+  const sys='あなたは機械学習の学習ノートを構造化するアシスタントです。与えられたテキストを、次のJSONだけで返してください（前置き・コードフェンス禁止）:\n{"categories":[{"name":"カテゴリ名","terms":[{"name":"用語名","definition":"定義・説明（原文を尊重しつつ日本語で簡潔に）","formula":"数式（なければ空文字。上付きは^{ }、下付きは_{ }で表記）","keypoints":["定義文中に登場する重要フレーズを2〜3個"]}]}]}\nkeypointsは必ずdefinitionの文中にそのまま含まれる文字列にしてください。';
+  return callGemini('次のテキストを構造化してください:\n\n'+chunk,sys);
+}
+/* 4択問題生成 */
+async function geminiGenQuestions(terms){
+  const sys='あなたは機械学習の教材から確認クイズを作る出題者です。各用語について4択問題を2問ずつ、次のJSONだけで返してください（前置き・コードフェンス禁止）:\n{"items":[{"termId":"入力で与えたid","questions":[{"q":"問題文","choices":["選択肢1","選択肢2","選択肢3","選択肢4"],"answerIndex":0,"expl":"簡潔な解説"}]}]}\n条件: 問題は与えた定義・数式・補足の内容だけから作る／選択肢は互いに明確に区別でき、正解は1つ／answerIndexはchoices配列の正解の位置（0〜3）／すべて日本語。';
+  const payload=terms.map(t=>({id:t.id,name:t.name,definition:t.def,formula:t.formula||'',note:t.note||''}));
+  return callGemini('次の用語からクイズを作成してください:\n'+JSON.stringify(payload),sys);
+}
+function validateGenQuestion(q){
+  return q&&typeof q.q==='string'&&q.q.length>4&&Array.isArray(q.choices)&&q.choices.length===4
+    &&q.choices.every(c=>typeof c==='string'&&c.trim())
+    &&new Set(q.choices.map(c=>c.trim())).size===4
+    &&Number.isInteger(q.answerIndex)&&q.answerIndex>=0&&q.answerIndex<4;
+}
+function showGenChip(text){$('#genChipText').textContent=text;$('#genChip').classList.remove('hidden');}
+function hideGenChip(){$('#genChip').classList.add('hidden');}
+
+/* ==================== テンプレート問題生成 ==================== */
+const FORMAT_LABEL={termToDef:'用語→定義',defToTerm:'定義→用語',fillBlank:'穴埋め',formulaMatch:'数式',gemini:'AI生成',manual:'手動',written:'記述'};
+function defSnippet(t){
+  let s=t.def.replace(/\n+/g,' ').trim();
+  const m=s.split('。')[0];
+  s=(m.length>=12?m:s).slice(0,90);
+  return s+(s.length>=90?'…':'');
+}
+function otherTerms(term,needFormula){
+  const same=DB.contents.terms.filter(x=>x.id!==term.id&&x.cat===term.cat&&(!needFormula||x.formula));
+  const rest=DB.contents.terms.filter(x=>x.id!==term.id&&x.cat!==term.cat&&(!needFormula||x.formula));
+  return shuffle(same).concat(shuffle(rest));
+}
+function buildChoices(correct,cands){
+  const seen=new Set([correct.trim()]);
+  const ds=[];
+  for(const c of cands){const v=c.trim();if(v&&!seen.has(v)){seen.add(v);ds.push(c);}if(ds.length>=3)break;}
+  if(ds.length<2)return null;
+  const choices=shuffle([correct,...ds]);
+  return {choices,answer:choices.indexOf(correct)};
+}
+function buildTemplateQuestion(term,format){
+  const feasible=['termToDef','defToTerm'];
+  if(term.kps&&term.kps.some(kp=>(term.def+term.note).includes(kp)))feasible.push('fillBlank');
+  if(term.formula)feasible.push('formulaMatch');
+  const fmt=(format&&feasible.includes(format))?format:pick(feasible);
+  if(fmt==='termToDef'){
+    const b=buildChoices(defSnippet(term),otherTerms(term).map(defSnippet));
+    if(!b)return null;
+    return {src:'auto',format:fmt,type:'choice',termId:term.id,q:`「${term.name}」の説明として正しいものはどれか？`,choices:b.choices,answer:b.answer,expl:''};
+  }
+  if(fmt==='defToTerm'){
+    const b=buildChoices(term.name,otherTerms(term).map(x=>x.name));
+    if(!b)return null;
+    return {src:'auto',format:fmt,type:'choice',termId:term.id,q:`次の説明に当てはまる用語はどれか？\n\n「${defSnippet(term)}」`,choices:b.choices,answer:b.answer,expl:''};
+  }
+  if(fmt==='fillBlank'){
+    const texts=[term.def,term.note].filter(Boolean);
+    const kps=shuffle(term.kps.filter(kp=>texts.some(tx=>tx.includes(kp))));
+    if(!kps.length)return null;
+    const kp=kps[0];
+    const tx=texts.find(x=>x.includes(kp));
+    const sent=(tx.split(/(?<=。)|\n/).find(s=>s.includes(kp))||tx).trim();
+    const blanked=sent.split(kp).join('【＿＿＿】');
+    const candKps=[];
+    otherTerms(term).forEach(x=>(x.kps||[]).forEach(k=>candKps.push(k)));
+    const b=buildChoices(kp,candKps);
+    if(!b)return null;
+    return {src:'auto',format:fmt,type:'choice',termId:term.id,q:`「${term.name}」について、空欄に当てはまるものはどれか？\n\n${blanked}`,choices:b.choices,answer:b.answer,expl:''};
+  }
+  if(fmt==='formulaMatch'){
+    const b=buildChoices(term.formula,otherTerms(term,true).map(x=>x.formula));
+    if(!b)return null;
+    return {src:'auto',format:fmt,type:'choice',termId:term.id,q:`「${term.name}」の数式として正しいものはどれか？`,choices:b.choices,answer:b.answer,expl:'',mono:true};
+  }
+  return null;
+}
+
+/* ==================== クイズセッション ==================== */
+let QZ={active:false};
+function renderQuizSetup(){
+  const grid=$('#quizCatGrid');
+  const cats=DB.contents.categories.slice().sort((a,b)=>a.order-b.order);
+  const prev=new Set(QZ.lastCats||cats.map(c=>c.id));
+  grid.innerHTML=cats.map(c=>`<label class="catcheck ${prev.has(c.id)?'on':''}"><input type="checkbox" value="${c.id}" ${prev.has(c.id)?'checked':''}>${esc(c.name)}<span class="muted" style="margin-left:auto">${termsOf(c.id).length}</span></label>`).join('');
+  grid.querySelectorAll('input').forEach(ch=>ch.addEventListener('change',()=>{ch.closest('.catcheck').classList.toggle('on',ch.checked);updateCatCount();}));
+  updateCatCount();updateGeminiStatusLine();
+}
+function updateCatCount(){
+  const n=$$('#quizCatGrid input:checked').length;
+  $('#catSelCount').textContent=n?`${n}カテゴリ選択中`:'カテゴリを選んでください';
+}
+function updateGeminiStatusLine(){
+  const on=DB.settings.useGemini&&DB.settings.apiKey;
+  $('#geminiDot').classList.toggle('on',!!on);
+  $('#geminiStatusText').textContent=on?`AI問題生成: ON（${DB.settings.model||'gemini-2.5-flash'}）`:'AI問題生成: OFF — テンプレート出題';
+}
+function segValue(sel){const b=$(sel+' button.on');return b?parseInt(b.dataset.n,10):10;}
+
+function startQuiz(catIds,n,mode,deckOverride){
+  const terms=DB.contents.terms.filter(t=>catIds.includes(t.cat));
+  let deck=[];
+  if(deckOverride){deck=deckOverride;}
+  else{
+    if(!terms.length){toast('選択したカテゴリに用語がありません',true);return;}
+    const order=[];
+    while(order.length<n)order.push(...shuffle(terms));
+    const usedKeys=new Set();
+    for(const term of order){
+      if(deck.length>=n)break;
+      const item=makeItemForTerm(term,usedKeys,null);
+      if(item)deck.push(item);
+    }
+  }
+  if(!deck.length){toast('出題できる問題がありません',true);return;}
+  QZ={active:true,deck,idx:0,correct:0,answered:false,mode:mode||'normal',cats:catIds,lastCats:catIds,startedAt:Date.now()};
+  $('#quizSetup').classList.add('hidden');
+  $('#quizStage').classList.remove('hidden');
+  renderQuestion();
+  if(!deckOverride)maybeGenerateForDeck(deck);
+}
+function makeItemForTerm(term,usedKeys,preferFormat){
+  const manuals=quizzesOf(term.id).filter(q=>!usedKeys.has('q:'+q.id));
+  const poolQs=(DB.pool[term.id]||[]).map((p,i)=>({p,key:'p:'+term.id+':'+i})).filter(x=>!usedKeys.has(x.key));
+  const stocked=[...manuals.map(m=>({kind:'manual',m})),...poolQs.map(x=>({kind:'pool',x}))];
+  if(stocked.length&&Math.random()<0.75&&!preferFormat){
+    const s=pick(stocked);
+    if(s.kind==='manual'){usedKeys.add('q:'+s.m.id);return manualToItem(s.m);}
+    usedKeys.add(s.x.key);return poolToItem(term.id,s.x.p);
+  }
+  for(let tries=0;tries<4;tries++){
+    const item=buildTemplateQuestion(term,preferFormat);
+    if(item){
+      const key='f:'+term.id+':'+item.format;
+      if(!usedKeys.has(key)||tries===3){usedKeys.add(key);return item;}
+    }
+  }
+  if(stocked.length){
+    const s=stocked[0];
+    if(s.kind==='manual'){usedKeys.add('q:'+s.m.id);return manualToItem(s.m);}
+    usedKeys.add(s.x.key);return poolToItem(term.id,s.x.p);
+  }
+  return null;
+}
+function manualToItem(m){
+  if(m.type==='written')return {src:'manual',format:'written',type:'written',termId:m.termId,quizId:m.id,q:m.q,modelAnswer:m.modelAnswer,expl:m.expl||''};
+  const idx=shuffle(m.choices.map((_,i)=>i));
+  const choices=idx.map(i=>m.choices[i]);
+  return {src:'manual',format:'manual',type:'choice',termId:m.termId,quizId:m.id,q:m.q,choices,answer:idx.indexOf(m.answer),expl:m.expl||''};
+}
+function poolToItem(termId,p){
+  const idx=shuffle(p.choices.map((_,i)=>i));
+  return {src:'pool',format:'gemini',type:'choice',termId,q:p.q,choices:idx.map(i=>p.choices[i]),answer:idx.indexOf(p.answerIndex),expl:p.expl||''};
+}
+
+/* セッション開始時のAI生成（在庫不足の用語のみ） */
+async function maybeGenerateForDeck(deck){
+  if(!DB.settings.useGemini||!DB.settings.apiKey)return;
+  const ids=[...new Set(deck.map(d=>d.termId))];
+  const need=ids.map(getTerm).filter(t=>t&&((DB.pool[t.id]||[]).length<3)).slice(0,5);
+  if(!need.length)return;
+  showGenChip('AI問題を生成中…（この間もテンプレートで出題します）');
+  try{
+    const res=await geminiGenQuestions(need);
+    let added=0;
+    (res.items||[]).forEach(it=>{
+      const term=getTerm(it.termId);if(!term)return;
+      (it.questions||[]).forEach(q=>{
+        if(!validateGenQuestion(q))return;
+        const arr=DB.pool[term.id]=DB.pool[term.id]||[];
+        if(arr.length>=8)return;
+        arr.push({q:q.q,choices:q.choices,answerIndex:q.answerIndex,expl:q.expl||'',at:Date.now()});
+        added++;
+      });
+    });
+    savePool();
+    if(added&&QZ.active){
+      const usedQ=new Set(QZ.deck.filter(d=>d.src==='pool').map(d=>d.q));
+      for(let i=QZ.idx+1;i<QZ.deck.length;i++){
+        const d=QZ.deck[i];
+        if(d.src!=='auto')continue;
+        const cand=(DB.pool[d.termId]||[]).filter(p=>!usedQ.has(p.q));
+        if(cand.length){const p=pick(cand);usedQ.add(p.q);QZ.deck[i]=poolToItem(d.termId,p);}
+      }
+    }
+    hideGenChip();
+    if(added)toast(`AI問題を${added}問生成しました`);
+  }catch(e){
+    hideGenChip();
+    toast('テンプレート出題に切り替えました（理由: '+(e.message||'通信エラー')+'）',true);
+  }
+}
+
+/* ==================== 出題・解答 ==================== */
+function renderQuestion(){
+  const stage=$('#quizStage'), item=QZ.deck[QZ.idx];
+  QZ.answered=false;
+  const srcChip=item.src==='pool'?'<span class="chip acc">AI生成</span>':item.src==='manual'?'<span class="chip">手動クイズ</span>':`<span class="chip">${FORMAT_LABEL[item.format]||''}</span>`;
+  const isReview=QZ.mode==='review'?'<span class="chip ng">復習</span>':'';
+  let body;
+  if(item.type==='choice'){
+    body=`<div class="choices" id="choices">${item.choices.map((c,i)=>`<button class="choice" data-i="${i}" onclick="answerChoice(${i})"><span class="ab">${'ABCD'[i]||String(i+1)}</span><span>${item.mono?('<span style="font-family:var(--mono);font-size:13.5px">'+fmtMath(c)+'</span>'):fmtMath(c)}</span></button>`).join('')}</div>`;
+  }else{
+    body=`<p class="muted" style="margin:0 0 12px">頭の中で答えてから、模範解答と見比べて自己採点してください。</p>
+      <div class="q-foot" style="justify-content:flex-start"><button class="btn pri" onclick="revealWritten()">模範解答を見る</button></div>`;
+  }
+  stage.innerHTML=`
+    <div class="q-head">
+      <span class="q-count">${QZ.idx+1} / ${QZ.deck.length}</span>
+      <div class="q-progress"><i style="width:${(QZ.idx/QZ.deck.length*100).toFixed(1)}%"></i></div>
+      <button class="btn sm ghost" onclick="quitSession()">中断</button>
+    </div>
+    <div class="card q-card">
+      <div class="q-src">${srcChip}${isReview}</div>
+      <div class="q-text">${fmtMath(item.q).replace(/\n/g,'<br>')}</div>
+      ${body}
+      <div id="qFeedback"></div>
+    </div>`;
+  window.scrollTo({top:0});
+}
+function feedbackHTML(item,correct){
+  const term=getTerm(item.termId);
+  const termBlock=term?`<div class="expl-term"><b>${esc(term.name)}</b><div style="font-size:13.5px;margin-top:4px">${fmtDef(defSnippet(term),term.kps)}</div>
+    ${term.formula?`<div class="formula" style="font-size:13px;margin-top:6px">${fmtMath(term.formula)}</div>`:''}
+    <a href="#learn" onclick="jumpToTerm('${term.id}',true);return false;" style="font-size:13px">→ 学習ページでこのカードを開く</a></div>`:'';
+  return `<div class="judge ${correct?'ok':'ng'}">${correct
+    ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>正解！'
+    :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>不正解'}</div>
+    <div class="expl-box">${item.expl?fmtMath(item.expl):(correct?'この調子で進めましょう。':'下のカードで確認しておきましょう。')}${termBlock}</div>
+    <div class="q-foot"><button class="btn pri" onclick="nextQ()">${QZ.idx+1>=QZ.deck.length?'結果を見る':'次の問題へ'}</button></div>`;
+}
+function answerChoice(i){
+  if(QZ.answered)return;QZ.answered=true;
+  const item=QZ.deck[QZ.idx], correct=i===item.answer;
+  $$('#choices .choice').forEach((b,bi)=>{
+    b.disabled=true;
+    if(bi===item.answer)b.classList.add('correct');
+    else if(bi===i&&!correct)b.classList.add('wrong');
+  });
+  recordAnswer(item,correct);
+  if(correct)QZ.correct++;
+  $('#qFeedback').innerHTML=feedbackHTML(item,correct);
+}
+function revealWritten(){
+  if(QZ.answered)return;
+  const item=QZ.deck[QZ.idx];
+  const stage=$('#quizStage');
+  stage.querySelector('.q-foot').outerHTML=`
+    <div class="written-ans"><b>模範解答</b><br>${fmtMath(item.modelAnswer)}</div>
+    ${item.expl?`<div class="expl-box">${fmtMath(item.expl)}</div>`:''}
+    <p class="muted" style="margin:12px 0 0">自分の答えは合っていましたか？</p>
+    <div class="selfgrade">
+      <button class="btn" style="color:var(--ok);border-color:var(--ok)" onclick="selfGrade(true)">○ 正解した</button>
+      <button class="btn" style="color:var(--ng);border-color:var(--ng)" onclick="selfGrade(false)">✗ 間違えた</button>
+    </div>`;
+}
+function selfGrade(ok){
+  if(QZ.answered)return;QZ.answered=true;
+  const item=QZ.deck[QZ.idx];
+  recordAnswer(item,ok);
+  if(ok)QZ.correct++;
+  const div=document.createElement('div');div.innerHTML=feedbackHTML(item,ok);
+  $('.q-card').appendChild(div);
+  $('.selfgrade').querySelectorAll('button').forEach(b=>b.disabled=true);
+}
+function nextQ(){
+  QZ.idx++;
+  if(QZ.idx>=QZ.deck.length)return finishSession();
+  renderQuestion();
+}
+function quitSession(){
+  if(!confirm('セッションを中断しますか？（このセッションは統計に記録されません）'))return;
+  QZ.active=false;
+  $('#quizStage').classList.add('hidden');$('#quizSetup').classList.remove('hidden');
+  renderQuizSetup();renderReview();
+}
+function finishSession(){
+  QZ.active=false;
+  DB.stats.sessions.push({d:todayStr(),total:QZ.deck.length,correct:QZ.correct,cats:QZ.cats||[],mode:QZ.mode});
+  if(DB.stats.sessions.length>500)DB.stats.sessions=DB.stats.sessions.slice(-500);
+  saveStats();
+  const wrongItems=QZ.deck.length-QZ.correct;
+  const rate=Math.round(QZ.correct/QZ.deck.length*100);
+  $('#quizStage').innerHTML=`<div class="card q-card" style="text-align:center">
+    <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:14px">${QZ.mode==='review'?'復習セッション完了':'セッション完了'}</h2>
+    <div class="result-num">${QZ.correct}<small> / ${QZ.deck.length}　（正答率 ${rate}%）</small></div>
+    <p class="muted" style="margin:14px 0 4px">${wrongItems?`間違えた${wrongItems}問は弱点リストに記録しました。連続2回正解すると自動的に外れます。`:'全問正解です。この範囲はよく身についています。'}</p>
+    <div class="row" style="justify-content:center;margin-top:20px">
+      <button class="btn" onclick="backToSetup()">クイズ設定へ</button>
+      ${wrongItems?'<button class="btn pri" onclick="switchView(\'review\')">復習ページを見る</button>':''}
+    </div>
+  </div>`;
+  renderReview();
+}
+function backToSetup(){
+  $('#quizStage').classList.add('hidden');$('#quizSetup').classList.remove('hidden');
+  renderQuizSetup();
+}
+
+/* ==================== 解答記録・弱点管理 ==================== */
+function recordAnswer(item,correct){
+  const now=new Date().toISOString();
+  const ts=DB.stats.terms[item.termId]=DB.stats.terms[item.termId]||{t:0,c:0};
+  ts.t++;if(correct)ts.c++;
+  const store=item.quizId?DB.weak.quizzes:DB.weak.terms;
+  const key=item.quizId||item.termId;
+  if(!correct){
+    const w=store[key]=store[key]||{miss:0,streak:0,last:now,formats:{}};
+    w.miss++;w.streak=0;w.last=now;
+    w.formats[item.format]=(w.formats[item.format]||0)+1;
+  }else if(store[key]){
+    const w=store[key];w.streak++;w.last=now;
+    if(w.streak>=2)delete store[key];
+  }
+  saveStats();saveWeak();
+}
+/* ==================== 復習ビュー ==================== */
+function weakEntries(){
+  const now=Date.now(), out=[];
+  for(const[id,w]of Object.entries(DB.weak.terms)){
+    const t=getTerm(id);if(!t){delete DB.weak.terms[id];continue;}
+    out.push({kind:'term',id,w,term:t,label:t.name,cat:getCat(t.cat)});
+  }
+  for(const[id,w]of Object.entries(DB.weak.quizzes)){
+    const q=DB.quizzes.find(x=>x.id===id);if(!q){delete DB.weak.quizzes[id];continue;}
+    const t=getTerm(q.termId);
+    out.push({kind:'quiz',id,w,quiz:q,term:t,label:(t?t.name+'：':'')+q.q.slice(0,30)+(q.q.length>30?'…':''),cat:t?getCat(t.cat):null});
+  }
+  out.forEach(e=>e.pri=e.w.miss*(1+daysBetween(e.w.last,now)));
+  out.sort((a,b)=>b.pri-a.pri);
+  return out;
+}
+function renderReview(){
+  const entries=weakEntries();saveWeak();
+  const num=$('#weakNum');
+  num.textContent=entries.length;
+  num.classList.toggle('zero',!entries.length);
+  $('#weakSummaryText').textContent=entries.length
+    ?`優先度の高い順に出題します。間違えた形式（${entries.slice(0,3).map(e=>e.label).join('、')} など）を重点的に確認できます。`
+    :'弱点はありません。クイズで間違えた問題が自動的にここに蓄積されます。';
+  $('#btnStartReview').disabled=!entries.length;
+
+  /* 弱点テーブル */
+  const maxPri=Math.max(1,...entries.map(e=>e.pri));
+  $('#weakTable').innerHTML=`<thead><tr><th>優先度</th><th>用語・クイズ</th><th>カテゴリ</th><th>間違い</th><th>連続正解</th><th>形式</th><th></th></tr></thead><tbody>`+
+    (entries.length?entries.map(e=>`<tr>
+      <td><span class="pri-bar" style="width:${Math.max(8,e.pri/maxPri*70)}px"></span></td>
+      <td>${e.term?`<a href="#learn" onclick="jumpToTerm('${e.term.id}',true);return false;">${esc(e.label)}</a>`:esc(e.label)}${e.kind==='quiz'?' <span class="chip">手動</span>':''}</td>
+      <td class="muted">${e.cat?esc(e.cat.name):'—'}</td>
+      <td>${e.w.miss}回</td>
+      <td>${e.w.streak}/2</td>
+      <td class="muted" style="font-size:12px">${Object.keys(e.w.formats).map(f=>FORMAT_LABEL[f]||f).join('・')||'—'}</td>
+      <td><button class="btn sm ghost" onclick="removeWeak('${e.kind}','${e.id}')">外す</button></td>
+    </tr>`).join(''):`<tr><td colspan="7" class="muted" style="text-align:center;padding:22px">弱点リストは空です</td></tr>`)+'</tbody>';
+
+  renderDashDaily();renderDashCats();
+}
+function removeWeak(kind,id){
+  if(kind==='term')delete DB.weak.terms[id];else delete DB.weak.quizzes[id];
+  saveWeak();renderReview();toast('弱点リストから外しました');
+}
+
+/* 復習セッション: 優先度順・間違えた形式を優先 */
+function startReview(n){
+  const entries=weakEntries();
+  if(!entries.length)return;
+  const deck=[],usedKeys=new Set();
+  let i=0;
+  while(deck.length<n&&i<entries.length*2){
+    const e=entries[i%entries.length];i++;
+    if(e.kind==='quiz'){
+      const key='q:'+e.quiz.id;
+      if(usedKeys.has(key)&&i<=entries.length)continue;
+      usedKeys.add(key);deck.push(manualToItem(e.quiz));
+    }else{
+      const missedFormats=Object.keys(e.w.formats).filter(f=>!['manual','written','gemini'].includes(f));
+      const prefer=missedFormats.length?pick(missedFormats):null;
+      const item=makeItemForTerm(e.term,usedKeys,prefer)||makeItemForTerm(e.term,usedKeys,null);
+      if(item)deck.push(item);
+    }
+    if(i>=entries.length&&deck.length>=Math.min(n,entries.length))break;
+  }
+  if(!deck.length){toast('出題できる問題がありません',true);return;}
+  switchView('quiz');
+  const cats=[...new Set(deck.map(d=>{const t=getTerm(d.termId);return t?t.cat:null;}).filter(Boolean))];
+  startQuiz(cats,deck.length,'review',deck.slice(0,n));
+}
+
+/* ==================== SVGダッシュボード ==================== */
+function renderDashDaily(){
+  const days=[];
+  for(let i=29;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    days.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
+  }
+  const agg={};DB.stats.sessions.forEach(s=>{const a=agg[s.d]=agg[s.d]||{t:0,c:0};a.t+=s.total;a.c+=s.correct;});
+  const W=460,H=170,pad=30,bw=(W-pad-14)/30;
+  const maxT=Math.max(5,...days.map(d=>(agg[d]||{t:0}).t));
+  let bars='',line='',dots='',first=true;
+  days.forEach((d,i)=>{
+    const a=agg[d];const x=pad+i*bw;
+    if(a&&a.t){
+      const h=(a.t/maxT)*(H-52);
+      bars+=`<rect x="${x+1}" y="${H-30-h}" width="${Math.max(2,bw-3)}" height="${h}" rx="2" fill="var(--accent)" opacity=".55"><title>${d}: ${a.t}問 / 正答率${Math.round(a.c/a.t*100)}%</title></rect>`;
+      const ry=H-30-(a.c/a.t)*(H-52);
+      line+=(first?'M':'L')+(x+bw/2)+' '+ry+' ';first=false;
+      dots+=`<circle cx="${x+bw/2}" cy="${ry}" r="2.6" fill="var(--ok)"/>`;
+    }
+  });
+  const any=DB.stats.sessions.length;
+  $('#dashDaily').innerHTML=any?`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="日別の演習量と正答率">
+    <line x1="${pad}" y1="${H-30}" x2="${W-8}" y2="${H-30}" stroke="var(--line2)"/>
+    <text x="${pad-4}" y="${H-34}" font-size="9" fill="var(--ink2)" text-anchor="end">0</text>
+    <text x="${pad-4}" y="20" font-size="9" fill="var(--ink2)" text-anchor="end">${maxT}問</text>
+    ${bars}<path d="${line}" fill="none" stroke="var(--ok)" stroke-width="2"/>${dots}
+    <text x="${pad}" y="${H-8}" font-size="10" fill="var(--ink2)">30日前</text>
+    <text x="${W-8}" y="${H-8}" font-size="10" fill="var(--ink2)" text-anchor="end">今日</text>
+    <text x="${W-8}" y="16" font-size="10" fill="var(--ok)" text-anchor="end">— 正答率（上端=100%）</text>
+  </svg>`:'<p class="muted" style="margin:20px 0">まだ記録がありません。クイズを完了すると集計されます。</p>';
+}
+function renderDashCats(){
+  const cats=DB.contents.categories.slice().sort((a,b)=>a.order-b.order);
+  const rows=cats.map(c=>{
+    let t=0,cc=0;
+    termsOf(c.id).forEach(x=>{const s=DB.stats.terms[x.id];if(s){t+=s.t;cc+=s.c;}});
+    return {name:c.name,t,c:cc,rate:t?cc/t:null};
+  }).filter(r=>r.t>0);
+  if(!rows.length){$('#dashCats').innerHTML='<p class="muted" style="margin:20px 0">まだ記録がありません。</p>';return;}
+  const W=460,rowH=26,H=rows.length*rowH+10,lw=150;
+  $('#dashCats').innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="カテゴリ別正答率">
+    ${rows.map((r,i)=>{
+      const y=i*rowH+8;const w=(W-lw-60)*r.rate;
+      const col=r.rate>=0.8?'var(--ok)':r.rate>=0.5?'var(--accent)':'var(--ng)';
+      return `<text x="${lw-8}" y="${y+13}" font-size="11.5" fill="var(--ink)" text-anchor="end">${esc(r.name.length>11?r.name.slice(0,11)+'…':r.name)}</text>
+        <rect x="${lw}" y="${y}" width="${W-lw-60}" height="16" rx="4" fill="var(--surface2)"/>
+        <rect x="${lw}" y="${y}" width="${Math.max(3,w)}" height="16" rx="4" fill="${col}" opacity=".8"><title>${esc(r.name)}: ${r.c}/${r.t}問正解</title></rect>
+        <text x="${lw+(W-lw-60)+6}" y="${y+13}" font-size="11" fill="var(--ink2)">${Math.round(r.rate*100)}%</text>`;
+    }).join('')}
+  </svg>`;
+}
+/* ==================== テーマ ==================== */
+const mq=window.matchMedia('(prefers-color-scheme: dark)');
+function applyTheme(){
+  const mode=DB.settings.theme;
+  const dark=mode==='dark'||(mode==='auto'&&mq.matches);
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+}
+mq.addEventListener('change',()=>{if(DB.settings.theme==='auto')applyTheme();});
+
+/* ==================== 設定ビュー ==================== */
+function renderSettings(){
+  $('#setTheme').value=DB.settings.theme;
+  $('#setUseGemini').checked=!!DB.settings.useGemini;
+  $('#setApiKey').value=DB.settings.apiKey;
+  $('#setModel').value=DB.settings.model;
+}
+/* ダウンロードがブロックされる環境向け: JSONを手動コピーできるモーダル */
+function showExportFallback(json){
+  const bg=openModal(`<h2>バックアップをコピー</h2>
+    <p class="muted" style="margin:0 0 10px">この環境では自動ダウンロードが使えないため、下のテキストを全選択してコピーし、テキストファイル（.json）として保存してください。</p>
+    <textarea id="expText" rows="12" readonly style="font-family:var(--mono);font-size:12px">${esc(json)}</textarea>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">閉じる</button><button class="btn pri" id="expCopy">クリップボードにコピー</button></div>`,true);
+  const ta=bg.querySelector('#expText');
+  setTimeout(()=>{ta.focus();ta.select();},60);
+  bg.querySelector('#expCopy').onclick=async()=>{
+    ta.select();
+    let done=false;
+    try{await navigator.clipboard.writeText(json);done=true;}catch(e){
+      try{done=document.execCommand('copy');}catch(_){}
+    }
+    toast(done?'コピーしました':'コピーできませんでした。手動で選択してください',!done);
+  };
+}
+function bindSettings(){
+  $('#setTheme').addEventListener('change',e=>{DB.settings.theme=e.target.value;saveSettings();applyTheme();});
+  $('#setUseGemini').addEventListener('change',e=>{DB.settings.useGemini=e.target.checked;saveSettings();updateGeminiStatusLine();});
+  $('#setApiKey').addEventListener('change',e=>{DB.settings.apiKey=e.target.value.trim();saveSettings();updateGeminiStatusLine();});
+  $('#setModel').addEventListener('change',e=>{DB.settings.model=e.target.value.trim()||'gemini-2.5-flash';saveSettings();updateGeminiStatusLine();});
+  $('#btnTestApi').addEventListener('click',async()=>{
+    const out=$('#apiTestResult');
+    DB.settings.apiKey=$('#setApiKey').value.trim();DB.settings.model=$('#setModel').value.trim()||'gemini-2.5-flash';saveSettings();
+    if(!DB.settings.apiKey){out.textContent='APIキーを入力してください';return;}
+    out.textContent='接続中…';
+    try{
+      await callGemini('{"ping":true} をそのまま返してください。','JSONのみで応答してください。');
+      out.textContent='✓ 接続に成功しました（'+DB.settings.model+'）';out.style.color='var(--ok)';
+    }catch(e){
+      out.textContent='✗ 失敗: '+(e.message||'通信エラー');out.style.color='var(--ng)';
+    }
+    updateGeminiStatusLine();
+  });
+  $('#btnExport').addEventListener('click',()=>{
+    const data={app:'mlstudy',version:1,exportedAt:new Date().toISOString(),
+      contents:DB.contents,quizzes:DB.quizzes,weak:DB.weak,stats:DB.stats,pool:DB.pool,
+      settings:{theme:DB.settings.theme,model:DB.settings.model,useGemini:DB.settings.useGemini}};
+    const json=JSON.stringify(data,null,1);
+    try{
+      const blob=new Blob([json],{type:'application/json'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      a.download='mlstudy-backup-'+todayStr()+'.json';a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+      toast('エクスポートしました');
+    }catch(e){
+      showExportFallback(json);
+    }
+  });
+  $('#btnImport').addEventListener('click',()=>$('#importFile').click());
+  $('#importFile').addEventListener('change',e=>{
+    const file=e.target.files[0];if(!file)return;
+    const r=new FileReader();
+    r.onload=()=>{
+      try{
+        const d=JSON.parse(r.result);
+        if(d.app!=='mlstudy'||!d.contents||!Array.isArray(d.contents.terms))throw new Error('形式が違います');
+        if(!confirm('現在のデータをインポート内容で置き換えます。よろしいですか？'))return;
+        DB.contents=d.contents;DB.quizzes=d.quizzes||[];DB.weak=d.weak||{terms:{},quizzes:{}};
+        DB.stats=d.stats||{sessions:[],terms:{}};DB.pool=d.pool||{};
+        if(d.settings)Object.assign(DB.settings,{theme:d.settings.theme||DB.settings.theme,model:d.settings.model||DB.settings.model,useGemini:d.settings.useGemini!==undefined?d.settings.useGemini:DB.settings.useGemini});
+        saveContents();saveQuizzes();saveWeak();saveStats();savePool();saveSettings();
+        applyTheme();renderAll();toast('インポートしました');
+      }catch(err){toast('インポートに失敗: '+err.message,true);}
+      e.target.value='';
+    };
+    r.readAsText(file);
+  });
+  $('#btnRestoreInitial').addEventListener('click',()=>{
+    if(!confirm('初期コンテンツのうち、削除・変更されたカードを元の内容で復元します。\n自分で追加したカードやクイズはそのまま残ります。よろしいですか？'))return;
+    const seedC=seedContents(),seedQ=seedQuizzes();
+    seedC.categories.forEach(sc=>{
+      const ex=getCat(sc.id);
+      if(!ex)DB.contents.categories.push(sc);else ex.name=sc.name;
+    });
+    seedC.terms.forEach(st=>{
+      const ex=getTerm(st.id);
+      if(!ex)DB.contents.terms.push(st);
+      else Object.assign(ex,{cat:st.cat,name:st.name,def:st.def,formula:st.formula,py:st.py,note:st.note,kps:st.kps,fig:st.fig});
+      delete DB.pool[st.id];
+    });
+    seedQ.forEach(sq=>{
+      const ex=DB.quizzes.find(q=>q.id===sq.id);
+      if(!ex)DB.quizzes.push(sq);else Object.assign(ex,sq);
+    });
+    saveContents();saveQuizzes();savePool();renderAll();toast('初期コンテンツを復元しました');
+  });
+  $('#btnResetAll').addEventListener('click',()=>{
+    if(!confirm('すべてのデータ（コンテンツ・クイズ・弱点・統計・生成問題・設定）を削除して初期状態に戻します。\nこの操作は元に戻せません。よろしいですか？'))return;
+    if(!confirm('本当によろしいですか？ 必要ならキャンセルして先にエクスポートしてください。'))return;
+    Object.values(LS).forEach(k=>localStorage.removeItem(k));
+    location.reload();
+  });
+}
+
+/* ==================== ビュー切替 ==================== */
+/* サンドボックス化ビューア（origin=null）では history/hash 操作が SecurityError を投げるため安全化 */
+let hashSyncOK=true;
+function safeGetHash(){try{return location.hash||'';}catch(e){return '';}}
+function safeSetHash(name){
+  if(!hashSyncOK)return;
+  try{if(location.hash!=='#'+name)history.replaceState(null,'','#'+name);}
+  catch(e){hashSyncOK=false;}
+}
+function switchView(name){
+  $$('.view').forEach(v=>v.classList.remove('on'));
+  const target=$('#view-'+name)||$('#view-learn');
+  target.classList.add('on');
+  $$('.tab').forEach(t=>t.classList.toggle('on',t.dataset.view===name));
+  safeSetHash(name);
+  if(name==='quiz'){
+    if(QZ.active){$('#quizSetup').classList.add('hidden');$('#quizStage').classList.remove('hidden');}
+    else{$('#quizSetup').classList.remove('hidden');$('#quizStage').classList.add('hidden');renderQuizSetup();}
+  }
+  if(name==='review')renderReview();
+  if(name==='settings')renderSettings();
+}
+function renderAll(){renderLearn();renderQuizSetup();renderReview();}
+
+/* ==================== 配線・初期化 ==================== */
+function bindUI(){
+  $('#tabs').addEventListener('click',e=>{
+    const b=e.target.closest('.tab');if(b)switchView(b.dataset.view);
+  });
+  $('#searchInput').addEventListener('input',applySearch);
+  $('#btnExpandAll').addEventListener('click',()=>$$('#contentArea details').forEach(d=>d.open=true));
+  $('#btnCollapseAll').addEventListener('click',()=>$$('#contentArea details').forEach(d=>d.open=false));
+  $('#btnAddCat').addEventListener('click',()=>openCatForm(null));
+  $('#btnBulkImport').addEventListener('click',openBulkImport);
+  $('#tocToggle').addEventListener('click',()=>$('#toc').classList.add('open'));
+  $('#tocClose').addEventListener('click',closeTocDrawer);
+  $$('#qCountSeg button,#rCountSeg button').forEach(b=>b.addEventListener('click',()=>{
+    b.parentElement.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  }));
+  $('#btnCatAll').addEventListener('click',()=>{$$('#quizCatGrid input').forEach(c=>{c.checked=true;c.closest('.catcheck').classList.add('on');});updateCatCount();});
+  $('#btnCatNone').addEventListener('click',()=>{$$('#quizCatGrid input').forEach(c=>{c.checked=false;c.closest('.catcheck').classList.remove('on');});updateCatCount();});
+  $('#btnStartQuiz').addEventListener('click',()=>{
+    const cats=$$('#quizCatGrid input:checked').map(c=>c.value);
+    if(!cats.length){toast('カテゴリを1つ以上選んでください',true);return;}
+    if(QZ.active&&!confirm('進行中のセッションがあります。破棄して新しく始めますか？'))return;
+    startQuiz(cats,segValue('#qCountSeg'),'normal');
+  });
+  $('#btnStartReview').addEventListener('click',()=>{
+    if(QZ.active&&!confirm('進行中のセッションがあります。破棄して復習を始めますか？'))return;
+    startReview(segValue('#rCountSeg'));
+  });
+}
+function boot(){
+  initDB();applyTheme();bindUI();bindSettings();
+  renderAll();
+  const h=(safeGetHash()||'#learn').slice(1);
+  switchView(['learn','quiz','review','settings'].includes(h)?h:'learn');
+}
+window.addEventListener('hashchange',()=>{
+  const h=safeGetHash().slice(1);
+  if(['learn','quiz','review','settings'].includes(h))switchView(h);
+});
+boot();
+</script>
+</body>
+</html>

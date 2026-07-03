@@ -981,6 +981,7 @@ function renderTOC(){
   </div>`).join('');
 }
 function jumpToCat(id){
+  if(_restoreCancel){_restoreCancel();_restoreCancel=null;}
   const el=$('#cat-'+id);if(!el)return;
   el.querySelector('details.cat').open=true;
   el.scrollIntoView({block:'start'});
@@ -988,6 +989,7 @@ function jumpToCat(id){
 }
 function jumpToTerm(id,flash){
   switchView('learn');
+  if(_restoreCancel){_restoreCancel();_restoreCancel=null;} /* 位置復元より、指定カードへの移動を優先 */
   const el=$('#term-'+id);if(!el)return;
   const cat=el.closest('details.cat');if(cat)cat.open=true;
   el.open=true;
@@ -1022,23 +1024,31 @@ function targetScrollY(){
   }
   return DB.ui.scrollY||0;
 }
-function restoreLearnScroll(){
+let _restoreCancel=null;
+function restoreLearnScroll(heavy){
+  if(_restoreCancel){_restoreCancel();_restoreCancel=null;}
   if(!DB.ui.anchor&&(DB.ui.scrollY||0)<=2)return;
   let cancelled=false,iv=null;
-  const stop=()=>{cancelled=true;if(iv)clearInterval(iv);};
+  const stop=()=>{cancelled=true;if(iv){clearInterval(iv);iv=null;}if(_restoreCancel===stop)_restoreCancel=null;};
+  _restoreCancel=stop;
   ['touchstart','wheel','keydown','pointerdown'].forEach(ev=>window.addEventListener(ev,stop,{once:true,passive:true}));
   const doScroll=()=>{
     if(cancelled)return;
     const y=targetScrollY();
     if(Math.abs(curScrollY()-y)>2){try{window.scrollTo({top:y,left:0,behavior:'instant'});}catch(e){window.scrollTo(0,y);}}
   };
-  /* レイアウト確定・フォント適用・画像描画で高さが変わっても追随できるよう、短時間くり返し復元する */
   doScroll();
   requestAnimationFrame(()=>requestAnimationFrame(doScroll));
-  iv=setInterval(doScroll,120);
-  setTimeout(stop,1400);
-  window.addEventListener('load',doScroll,{once:true});
-  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(doScroll).catch(()=>{});}
+  if(heavy){
+    /* 初回読み込み時はレイアウト確定・フォント適用・画像描画で高さが変わるので、短時間くり返し復元する */
+    iv=setInterval(doScroll,120);
+    setTimeout(stop,1400);
+    window.addEventListener('load',doScroll,{once:true});
+    if(document.fonts&&document.fonts.ready){document.fonts.ready.then(doScroll).catch(()=>{});}
+  }else{
+    /* タブ切り替え時はレイアウト済みなので軽く数回だけ */
+    setTimeout(doScroll,50);setTimeout(stop,140);
+  }
 }
 function flushUI(){
   if($('#view-learn')&&$('#view-learn').classList.contains('on')){DB.ui.scrollY=curScrollY();captureLearnAnchor();}
@@ -1903,7 +1913,7 @@ function switchView(name){
   }
   if(name==='review')renderReview();
   if(name==='settings')renderSettings();
-  if(name==='learn'&&!learnRestored){learnRestored=true;restoreLearnScroll();} /* リロード後の初回のみ位置を復元 */
+  if(name==='learn'){const heavy=!learnRestored;learnRestored=true;restoreLearnScroll(heavy);} /* 学習を表示するたびに位置を復元。display:noneで先頭に戻る現象への対処 */
 }
 function renderAll(){renderLearn();renderQuizSetup();renderReview();}
 

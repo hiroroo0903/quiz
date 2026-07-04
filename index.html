@@ -44,9 +44,47 @@ mark{background:var(--mark);color:var(--mark-ink);padding:0 2px;border-radius:3p
 
 /* ============ app shell ============ */
 .topbar{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
-.topbar-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:10px 16px}
-.brand{font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.04em;white-space:nowrap}
+.topbar-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:18px 16px 10px}
+.topbar-sub{display:none;align-items:stretch;gap:8px;max-width:1180px;margin:0 auto;padding:0 16px 14px}
+.topbar-sub.on{display:flex}
+.topbar-sub .toc-toggle{flex-shrink:0;padding:0 13px}
+.topbar-sub .searchbox{flex:1;min-width:0}
+.brand{flex:1;min-width:0;font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.04em;display:flex;flex-direction:column;align-items:stretch;line-height:1.15}
 .brand small{font-family:var(--sans);font-size:11px;color:var(--ink2);font-weight:400;display:block;letter-spacing:.12em;margin-top:-2px}
+.nb-switch{width:100%;display:flex;flex-direction:column;align-items:stretch;gap:2px;background:var(--accent-soft);border:1px solid var(--accent-line);padding:9px 15px 10px 15px;border-radius:12px;cursor:pointer}
+.nb-switch:hover,.nb-switch.open{background:var(--accent-line)}
+.nb-kicker{font-family:var(--sans);font-size:10px;letter-spacing:.16em;color:var(--accent-ink);font-weight:700;opacity:.85;text-align:left}
+.nb-current{display:flex;align-items:center;gap:6px;width:100%;font-family:var(--serif);font-size:18.5px;font-weight:700;color:var(--accent-ink);line-height:1.25}
+.nb-current #nbName{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.nb-current svg{width:18px;height:18px;color:var(--accent);flex-shrink:0;margin-left:auto;transition:transform .18s}
+.nb-switch.open .nb-current svg{transform:rotate(180deg)}
+/* ドロップダウン */
+.nbm-wrap{position:fixed;inset:0;z-index:120}
+.nbm-scrim{position:absolute;inset:0;background:rgba(8,10,14,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;transition:opacity .18s}
+.nbm-wrap.show .nbm-scrim{opacity:1}
+.nbm-panel{position:absolute;background:var(--surface);border:1px solid var(--line2);border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,.5),0 2px 8px rgba(0,0,0,.3);overflow:hidden;opacity:0;transform:translateY(-10px) scale(.98);transform-origin:top center;transition:opacity .18s,transform .18s;display:flex;flex-direction:column;max-height:76vh}
+.nbm-wrap.show .nbm-panel{opacity:1;transform:none}
+.nbm-head{font-size:10.5px;font-weight:700;letter-spacing:.14em;color:var(--ink2);padding:15px 18px 9px;text-transform:uppercase}
+.nbm-list{overflow-y:auto;padding:2px 8px 4px}
+.nbm-item{width:100%;display:flex;align-items:center;gap:11px;border:none;background:none;text-align:left;padding:14px 12px;border-radius:11px;color:var(--ink);font-size:15.5px;min-height:52px}
+.nbm-item:hover{background:var(--surface2)}
+.nbm-item.on{background:var(--surface2);box-shadow:inset 3px 0 0 var(--accent)}
+.nbm-check{width:16px;flex-shrink:0;color:var(--accent);font-weight:700;text-align:center;font-size:14px}
+.nbm-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.nbm-item.on .nbm-name{color:var(--accent-ink)}
+.nbm-count{flex-shrink:0;font-size:12.5px;color:var(--ink2)}
+.nbm-foot{border-top:1px solid var(--line);padding:7px;display:flex;flex-direction:column;gap:2px;background:var(--surface2)}
+.nbm-action{width:100%;text-align:left;border:none;background:none;color:var(--ink);font-size:14.5px;padding:13px 12px;border-radius:10px;display:flex;align-items:center;gap:10px}
+.nbm-action:hover{background:var(--surface)}
+.nbm-action.pri{color:var(--accent-ink);font-weight:700}
+.nbm-action svg{color:var(--accent);flex-shrink:0}
+.nb-list{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow-y:auto}
+.nb-row{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:9px;padding:6px 8px;background:var(--surface)}
+.nb-row.on{border-color:var(--accent-line);background:var(--accent-soft)}
+.nb-pick{flex:1;min-width:0;display:flex;align-items:center;gap:9px;border:none;background:none;text-align:left;padding:5px 4px;color:var(--ink);font-size:15px}
+.nb-dot{color:var(--accent);font-size:11px;flex-shrink:0}
+.nb-rowname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.nb-count{flex-shrink:0;font-size:12px}
 .tabs{display:flex;gap:2px;margin-left:auto}
 .tab{border:none;background:none;color:var(--ink2);padding:9px 14px;border-radius:8px;font-size:14.5px;display:flex;align-items:center;gap:6px}
 .tab svg{width:17px;height:17px}
@@ -85,7 +123,7 @@ mark{background:var(--mark);color:var(--mark-ink);padding:0 2px;border-radius:3p
 
 /* ============ learn view ============ */
 .learn-wrap{display:grid;grid-template-columns:264px 1fr;gap:26px;align-items:start}
-.toc{position:sticky;top:76px;max-height:calc(100vh - 96px);overflow-y:auto;padding:6px 4px 20px;font-size:13.5px}
+.toc{position:sticky;top:calc(var(--header-h,120px) + 10px);max-height:calc(100vh - var(--header-h,120px) - 24px);overflow-y:auto;padding:6px 4px 20px;font-size:13.5px}
 .toc-cat{margin-bottom:2px}
 .toc-cat>a{display:block;padding:5px 10px;border-radius:7px;color:var(--ink);font-weight:600;border-left:3px solid transparent}
 .toc-cat>a:hover{background:var(--surface2);text-decoration:none}
@@ -93,11 +131,18 @@ mark{background:var(--mark);color:var(--mark-ink);padding:0 2px;border-radius:3p
 .toc-terms{margin:0;padding:0 0 4px 14px;list-style:none}
 .toc-terms a{display:block;padding:2px 8px;border-radius:6px;color:var(--ink2);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .toc-terms a:hover{background:var(--surface2);color:var(--ink);text-decoration:none}
-.learn-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
-.searchbox{position:relative;flex:1;min-width:200px}
-.searchbox svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--ink2)}
-.searchbox input{width:100%;padding-left:32px}
-.cat-block{margin-bottom:18px}
+.learn-tools{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.lt-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lt-right{display:flex;gap:8px;flex-wrap:wrap}
+@media(min-width:640px){.lt-right{margin-left:auto}}
+.lt-group{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;flex-shrink:0}
+.lt-group button{border:none;background:var(--surface);color:var(--ink2);padding:8px 14px;font-size:13.5px;white-space:nowrap}
+.lt-group button:hover{background:var(--surface2);color:var(--ink)}
+.lt-group button+button{border-left:1px solid var(--line2)}
+.searchbox{position:relative;flex:1;min-width:0}
+.searchbox svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ink2)}
+.searchbox input{width:100%;padding:10px 12px 10px 36px;border-radius:10px}
+.cat-block{margin-bottom:18px;scroll-margin-top:calc(var(--header-h,120px) + 14px)}
 details.cat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
 details.cat>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;user-select:none}
 details.cat>summary::-webkit-details-marker{display:none}
@@ -109,7 +154,7 @@ details.cat>summary:hover{background:var(--surface2)}
 details[open]>summary .caret{transform:rotate(90deg)}
 .cat-body{border-top:1px solid var(--line);padding:8px 18px 16px}
 .cat-actions{display:flex;gap:6px;justify-content:flex-end;padding:8px 0 2px}
-details.term{border-bottom:1px dashed var(--line)}
+details.term{border-bottom:1px dashed var(--line);scroll-margin-top:calc(var(--header-h,120px) + 14px)}
 details.term:last-of-type{border-bottom:none}
 details.term>summary{list-style:none;display:flex;align-items:baseline;gap:10px;padding:11px 4px;cursor:pointer;user-select:none}
 details.term>summary::-webkit-details-marker{display:none}
@@ -131,6 +176,8 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
 .fig-box{margin:12px 0 4px;text-align:center}
 .fig-box svg{max-width:100%;height:auto}
 .term-foot{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.btn.ghost.ai{color:var(--accent-ink);background:var(--accent-soft)}
+.btn.ghost.ai:hover{background:var(--accent-line)}
 .flash{animation:flashbg 1.8s ease-out}
 @keyframes flashbg{0%{background:var(--mark)}100%{background:transparent}}
 
@@ -226,7 +273,7 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
   .toc{position:fixed;left:0;top:0;bottom:0;z-index:90;background:var(--surface);width:290px;max-height:none;padding:70px 14px 30px;box-shadow:var(--shadow);transform:translateX(-100%);transition:transform .22s}
   .toc.open{transform:none}
   .toc-close{position:absolute;top:16px;right:14px}
-  .topbar-in{flex-wrap:wrap;gap:6px}
+  .topbar-in{flex-wrap:wrap;column-gap:6px;row-gap:16px}
   .tabs{margin-left:0;width:100%;justify-content:space-between}
   .tab{padding:8px 8px;font-size:13px}
   .brand{font-size:17px}
@@ -239,7 +286,7 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
 <body>
 <header class="topbar">
   <div class="topbar-in">
-    <div class="brand">ML学習ノート<small>ENSEMBLE / NN / OPTIMIZATION</small></div>
+    <div class="brand"><button class="nb-switch" id="nbSwitch" aria-haspopup="menu"><span class="nb-kicker">ML学習ノート</span><span class="nb-current"><span id="nbName">ノート</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></span></button></div>
     <nav class="tabs" id="tabs">
       <button class="tab" data-view="learn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V4H6.5A2.5 2.5 0 004 6.5v13zM4 19.5A2.5 2.5 0 006.5 22H20"/></svg>学習</button>
       <button class="tab" data-view="quiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>クイズ</button>
@@ -247,20 +294,28 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
       <button class="tab" data-view="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008.6 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 8.6a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>設定</button>
     </nav>
   </div>
+  <div class="topbar-sub" id="topbarSub">
+    <button class="btn toc-toggle" id="tocToggle" aria-label="目次"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+    <div class="searchbox">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="search" id="searchInput" placeholder="用語・定義を検索…" autocomplete="off">
+    </div>
+  </div>
 </header>
 
 <!-- ============ 学習ビュー ============ -->
 <main id="view-learn" class="view">
   <div class="learn-tools">
-    <button class="btn toc-toggle" id="tocToggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>目次</button>
-    <div class="searchbox">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input type="search" id="searchInput" placeholder="用語・定義を検索…" autocomplete="off">
+    <div class="lt-actions">
+      <div class="lt-group">
+        <button id="btnExpandAll">すべて開く</button>
+        <button id="btnCollapseAll">すべて閉じる</button>
+      </div>
+      <div class="lt-right">
+        <button class="btn sm" id="btnAddCat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>カテゴリ追加</button>
+        <button class="btn sm pri" id="btnBulkImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>一括追加</button>
+      </div>
     </div>
-    <button class="btn sm" id="btnExpandAll">すべて開く</button>
-    <button class="btn sm" id="btnCollapseAll">すべて閉じる</button>
-    <button class="btn sm" id="btnAddCat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>カテゴリ追加</button>
-    <button class="btn sm pri" id="btnBulkImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>テキストから一括追加</button>
   </div>
   <div class="learn-wrap">
     <nav class="toc" id="toc" aria-label="目次">
@@ -356,11 +411,11 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
     <h2 class="sect-title">データ管理</h2>
     <div class="card" style="padding:18px 20px">
       <div class="row" style="margin-bottom:12px">
-        <button class="btn" id="btnExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>JSONエクスポート</button>
-        <button class="btn" id="btnImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>JSONインポート</button>
+        <button class="btn" id="btnExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>全ノートをエクスポート</button>
+        <button class="btn" id="btnImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>インポート（復元）</button>
         <input type="file" id="importFile" accept=".json,application/json" class="hidden">
       </div>
-      <p class="muted" style="margin:0 0 12px">エクスポートには、コンテンツ・手動クイズ・弱点記録・統計・AI生成問題プールが含まれます（APIキーは含まれません）。</p>
+      <p class="muted" style="margin:0 0 12px">エクスポートは<b>すべてのノートをまとめて1つのファイル</b>に保存します（各ノートのコンテンツ・手動クイズ・弱点記録・統計・AI生成問題プールを含み、APIキーは含みません）。インポートすると、同じノートは最新内容に更新し、無いノートは追加します（同じファイルを二重に取り込んでも増えません）。他端末への移行や丸ごとバックアップに使えます。</p>
       <div class="row">
         <button class="btn" id="btnRestoreInitial">初期コンテンツを復元</button>
         <button class="btn danger" id="btnResetAll">全データをリセット</button>
@@ -833,30 +888,56 @@ function fmtDef(raw,kps){
 }
 
 /* ==================== ストレージ ==================== */
-const LS={contents:'mlstudy.contents',quizzes:'mlstudy.quizzes',weak:'mlstudy.weak',stats:'mlstudy.stats',settings:'mlstudy.settings',pool:'mlstudy.pool',ui:'mlstudy.ui'};
+const LS={contents:'mlstudy.contents',quizzes:'mlstudy.quizzes',weak:'mlstudy.weak',stats:'mlstudy.stats',settings:'mlstudy.settings',pool:'mlstudy.pool',ui:'mlstudy.ui',notebooks:'mlstudy.notebooks'};
 function load(key,fallback){try{const v=localStorage.getItem(key);return v?JSON.parse(v):fallback;}catch(e){return fallback;}}
 function save(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){toast('保存に失敗しました（容量不足の可能性）',true);}}
 
-let DB={contents:null,quizzes:null,weak:null,stats:null,settings:null,pool:null,ui:null};
-function initDB(){
-  DB.contents=load(LS.contents,null);
-  if(!DB.contents){DB.contents=seedContents();save(LS.contents,DB.contents);}
-  DB.quizzes=load(LS.quizzes,null);
-  if(!DB.quizzes){DB.quizzes=seedQuizzes();save(LS.quizzes,DB.quizzes);}
-  DB.weak=load(LS.weak,{terms:{},quizzes:{}});
-  DB.stats=load(LS.stats,{sessions:[],terms:{}});
-  DB.settings=Object.assign({theme:'auto',apiKey:'',model:'gemini-2.5-flash',useGemini:true},load(LS.settings,{}));
-  DB.pool=load(LS.pool,{});
-  DB.ui=load(LS.ui,{scrollY:0,open:{},view:'learn'});
+let DB={contents:null,quizzes:null,weak:null,stats:null,settings:null,pool:null,ui:null,notebooks:null,activeId:null};
+function nbKey(base){return 'mlstudy.nb.'+DB.activeId+'.'+base;}
+function nbKeyOf(id,base){return 'mlstudy.nb.'+id+'.'+base;}
+function migrateOrCreateNotebooks(){
+  const id='nb-'+Date.now().toString(36);
+  const legacy=load(LS.contents,null);
+  if(legacy){ /* 旧バージョン（単一ノート）のデータをそのまま1冊目へ移行 */
+    save(nbKeyOf(id,'contents'),legacy);
+    ['quizzes','weak','stats','pool','ui'].forEach(b=>{const v=load('mlstudy.'+b,null);if(v!=null)save(nbKeyOf(id,b),v);});
+    ['contents','quizzes','weak','stats','pool','ui'].forEach(b=>{try{localStorage.removeItem('mlstudy.'+b);}catch(e){}});
+    return {active:id,list:[{id,name:'機械学習ノート',createdAt:Date.now()}]};
+  }
+  /* 新規インストール: 1冊目は見本のML教材（seed:true。storageが使えない環境でもメモリ上で復元される） */
+  return {active:id,list:[{id,name:'機械学習ノート',createdAt:Date.now(),seed:true}]};
+}
+function loadActiveNotebook(){
+  const nb=DB.notebooks.find(n=>n.id===DB.activeId);
+  let c=load(nbKey('contents'),null);
+  if(c==null){c=(nb&&nb.seed)?seedContents():{version:1,categories:[],terms:[]};save(nbKey('contents'),c);}
+  DB.contents=c;
+  let q=load(nbKey('quizzes'),null);
+  if(q==null){q=(nb&&nb.seed)?seedQuizzes():[];save(nbKey('quizzes'),q);}
+  DB.quizzes=q;
+  DB.weak=load(nbKey('weak'),{terms:{},quizzes:{}});
+  if(!DB.weak.terms)DB.weak.terms={};if(!DB.weak.quizzes)DB.weak.quizzes={};
+  DB.stats=load(nbKey('stats'),{sessions:[],terms:{}});
+  DB.pool=load(nbKey('pool'),{});
+  DB.ui=load(nbKey('ui'),{scrollY:0,open:{},view:'learn'});
   if(!DB.ui.open)DB.ui.open={};
 }
-const saveContents=()=>save(LS.contents,DB.contents);
-const saveQuizzes=()=>save(LS.quizzes,DB.quizzes);
-const saveWeak=()=>save(LS.weak,DB.weak);
-const saveStats=()=>save(LS.stats,DB.stats);
+function initDB(){
+  DB.settings=Object.assign({theme:'auto',apiKey:'',model:'gemini-2.5-flash',useGemini:true},load(LS.settings,{}));
+  let reg=load(LS.notebooks,null);
+  if(!reg||!reg.list||!reg.list.length){reg=migrateOrCreateNotebooks();save(LS.notebooks,reg);}
+  DB.notebooks=reg.list;DB.activeId=reg.active;
+  if(!DB.notebooks.some(nb=>nb.id===DB.activeId))DB.activeId=DB.notebooks[0].id;
+  loadActiveNotebook();
+}
+const saveContents=()=>save(nbKey('contents'),DB.contents);
+const saveQuizzes=()=>save(nbKey('quizzes'),DB.quizzes);
+const saveWeak=()=>save(nbKey('weak'),DB.weak);
+const saveStats=()=>save(nbKey('stats'),DB.stats);
 const saveSettings=()=>save(LS.settings,DB.settings);
-const savePool=()=>save(LS.pool,DB.pool);
-const saveUI=()=>save(LS.ui,DB.ui);
+const savePool=()=>save(nbKey('pool'),DB.pool);
+const saveUI=()=>save(nbKey('ui'),DB.ui);
+const saveNotebooks=()=>save(LS.notebooks,{active:DB.activeId,list:DB.notebooks});
 let _uiTimer=null;
 function saveUISoon(){clearTimeout(_uiTimer);_uiTimer=setTimeout(saveUI,250);}
 
@@ -966,6 +1047,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#modalRoot').chi
 /* ==================== 学習ビュー ==================== */
 const CARET='<svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
 const TCARET='<svg class="tcaret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 18l6-6-6-6"/></svg>';
+const AI_ICON='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-2px;margin-right:3px"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8L18 15z"/></svg>';
 
 function isOpen(id){return DB.ui.open[id]!==false;}
 function bindLearnToggles(){
@@ -1012,8 +1094,10 @@ function renderTermCard(t){
       ${t.note?`<div class="note-box">※ ${fmtDef(t.note,t.kps)}</div>`:''}
       ${fig}
       <div class="term-foot">
-        <button class="btn sm ghost" onclick="openTermForm('${t.id}')">編集</button>
+        <button class="btn sm ghost ai" onclick="openAiQuiz('${t.id}','choice')">${AI_ICON}AIで4択作成</button>
+        <button class="btn sm ghost ai" onclick="openAiQuiz('${t.id}','written')">${AI_ICON}AIで記述作成</button>
         <button class="btn sm ghost" onclick="openQuizManager('${t.id}')">手動クイズ${nq?`（${nq}）`:''}</button>
+        <button class="btn sm ghost" onclick="openTermForm('${t.id}')">編集</button>
         <button class="btn sm ghost" style="color:var(--ng)" onclick="deleteTerm('${t.id}')">削除</button>
       </div>
     </div>
@@ -1107,7 +1191,7 @@ window.addEventListener('scroll',()=>{
   requestAnimationFrame(()=>{
     scrollTick=false;
     let cur=null;
-    $$('.cat-block').forEach(b=>{if(b.getBoundingClientRect().top<130)cur=b.id.replace('cat-','');});
+    $$('.cat-block').forEach(b=>{if(b.getBoundingClientRect().top<_headerH+40)cur=b.id.replace('cat-','');});
     $$('.toc-cat').forEach(el=>el.classList.toggle('cur',el.dataset.cat===cur));
   });
 });
@@ -1213,7 +1297,7 @@ function renderQuizManagerList(termId,bg){
   const qs=quizzesOf(termId);
   list.innerHTML=qs.length?qs.map(q=>`<div class="mq-item">
       <div class="q">${esc(q.q)}</div>
-      <div class="meta">${q.type==='choice'?'4択　正解: '+esc(q.choices[q.answer]):'記述式（自己採点）'}${q.seed?'　<span class="chip">初期収録</span>':''}</div>
+      <div class="meta">${q.type==='choice'?'4択　正解: '+esc(q.choices[q.answer]):'記述式（自己採点）'}${q.seed?'　<span class="chip">初期収録</span>':''}${q.ai?'　<span class="chip acc">AI生成</span>':''}</div>
       <div class="row" style="margin-top:7px"><button class="btn sm ghost" onclick="openQuizForm('${termId}','${q.id}')">編集</button><button class="btn sm ghost" style="color:var(--ng)" onclick="deleteQuiz('${termId}','${q.id}')">削除</button></div>
     </div>`).join(''):'<p class="muted">この用語の手動クイズはまだありません。自動生成では作れない角度の問題（比較・数値・理由など）を追加できます。</p>';
 }
@@ -1222,6 +1306,69 @@ function deleteQuiz(termId,quizId){
   DB.quizzes=DB.quizzes.filter(q=>q.id!==quizId);
   delete DB.weak.quizzes[quizId];
   saveQuizzes();saveWeak();renderQuizManagerList(termId);renderLearn();renderReview();toast('クイズを削除しました');
+}
+
+/* ===== AIで問題を作成（用語カードごと） ===== */
+async function geminiGenOneQuestion(term,type){
+  const payload={name:term.name,definition:term.def,formula:term.formula||'',note:term.note||''};
+  if(type==='written'){
+    const sys='あなたは学習教材から記述式の確認問題を作る出題者です。次のJSONだけで返してください（前置き・コードフェンス禁止）:\n{"q":"問題文（説明・違い・理由・導出などを問う）","modelAnswer":"模範解答（要点を簡潔に）","expl":"補足解説（なければ空文字）"}\n条件: 与えた定義・数式・補足の内容だけから作る／日本語。';
+    const r=await callGemini('次の用語から記述式問題を1問作成してください:\n'+JSON.stringify(payload),sys);
+    if(!r||typeof r.q!=='string'||!r.q.trim()||typeof r.modelAnswer!=='string'||!r.modelAnswer.trim())throw new Error('生成結果の形式が不正でした');
+    return {type:'written',q:r.q.trim(),modelAnswer:r.modelAnswer.trim(),expl:(r.expl||'').trim()};
+  }
+  const sys='あなたは学習教材から4択の確認問題を作る出題者です。次のJSONだけで返してください（前置き・コードフェンス禁止）:\n{"q":"問題文","choices":["選択肢1","選択肢2","選択肢3","選択肢4"],"answerIndex":0,"expl":"簡潔な解説"}\n条件: 与えた定義・数式・補足の内容だけから作る／選択肢は4つで互いに明確に区別でき正解は1つ／answerIndexはchoices内の正解位置（0〜3）／日本語。';
+  const r=await callGemini('次の用語から4択問題を1問作成してください:\n'+JSON.stringify(payload),sys);
+  if(!validateGenQuestion(r))throw new Error('生成結果の形式が不正でした');
+  return {type:'choice',q:r.q.trim(),choices:r.choices.map(c=>String(c).trim()),answerIndex:r.answerIndex,expl:(r.expl||'').trim()};
+}
+function openAiQuiz(termId,type){
+  const term=getTerm(termId);if(!term)return;
+  if(!DB.settings.useGemini||!DB.settings.apiKey){
+    openModal(`<h2>AIで問題を作成</h2>
+      <p>この機能はGemini APIを使います。設定タブでAPIキーを登録し、「Gemini機能を使う」をONにすると利用できます。</p>
+      <div class="modal-foot"><button class="btn" onclick="closeModal()">閉じる</button><button class="btn pri" onclick="closeModal();switchView('settings')">設定を開く</button></div>`);
+    return;
+  }
+  const bg=openModal(`<h2>${AI_ICON}AIで${type==='written'?'記述':'4択'}問題を作成</h2>
+    <p class="muted" style="margin:0 0 4px">用語「<b>${esc(term.name)}</b>」の内容から作成します。</p>
+    <div id="aiqBody"></div>`,true);
+  aiGenAndShow(term,type,bg);
+}
+function aiSpinner(){return '<div class="row" style="gap:10px;align-items:center;padding:16px 2px"><span class="spinner"></span><span class="muted">AIが問題を作成しています…</span></div>';}
+async function aiGenAndShow(term,type,bg){
+  const body=bg.querySelector('#aiqBody');
+  body.innerHTML=aiSpinner();
+  let q;
+  try{q=await geminiGenOneQuestion(term,type);}
+  catch(e){
+    body.innerHTML=`<div class="note-box" style="border-color:var(--ng)">生成に失敗しました。${esc(e.message||'通信エラー')}</div>
+      <div class="modal-foot"><button class="btn" onclick="closeModal()">閉じる</button><button class="btn pri" id="aiRetry">もう一度試す</button></div>`;
+    body.querySelector('#aiRetry').onclick=()=>aiGenAndShow(term,type,bg);
+    return;
+  }
+  let preview;
+  if(q.type==='choice'){
+    preview=`<div class="q-text" style="font-size:15.5px;margin:6px 0 12px">${fmtMath(q.q)}</div>
+      <div class="choices">${q.choices.map((c,i)=>`<div class="choice${i===q.answerIndex?' correct':''}" style="cursor:default"><span class="ab">${'ABCD'[i]}</span><span>${fmtMath(c)}</span></div>`).join('')}</div>
+      ${q.expl?`<div class="expl-box" style="margin-top:10px">${fmtMath(q.expl)}</div>`:''}`;
+  }else{
+    preview=`<div class="q-text" style="font-size:15.5px;margin:6px 0 12px">${fmtMath(q.q)}</div>
+      <div class="written-ans"><b>模範解答</b><br>${fmtMath(q.modelAnswer)}</div>
+      ${q.expl?`<div class="expl-box">${fmtMath(q.expl)}</div>`:''}`;
+  }
+  body.innerHTML=`<p class="muted" style="margin:2px 0 10px">内容を確認して保存してください。保存後は「手動クイズ」から編集・削除でき、クイズ・復習に出題されます。</p>
+    ${preview}
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn" id="aiAgain">作り直す</button><button class="btn pri" id="aiSave">保存する</button></div>`;
+  body.querySelector('#aiAgain').onclick=()=>aiGenAndShow(term,type,bg);
+  body.querySelector('#aiSave').onclick=()=>{
+    const quiz=(q.type==='choice')
+      ? {id:uid('q'),termId:term.id,type:'choice',q:q.q,choices:q.choices,answer:q.answerIndex,expl:q.expl,ai:true}
+      : {id:uid('q'),termId:term.id,type:'written',q:q.q,modelAnswer:q.modelAnswer,expl:q.expl,ai:true};
+    DB.quizzes.push(quiz);saveQuizzes();closeModal();renderLearn();
+    if($('#mqList'))renderQuizManagerList(term.id);
+    toast('AI問題を保存しました（手動クイズに追加）');
+  };
 }
 function openQuizForm(termId,quizId){
   const q=quizId?DB.quizzes.find(x=>x.id===quizId):null;
@@ -1859,16 +2006,14 @@ function bindSettings(){
     updateGeminiStatusLine();
   });
   $('#btnExport').addEventListener('click',()=>{
-    const data={app:'mlstudy',version:1,exportedAt:new Date().toISOString(),
-      contents:DB.contents,quizzes:DB.quizzes,weak:DB.weak,stats:DB.stats,pool:DB.pool,
-      settings:{theme:DB.settings.theme,model:DB.settings.model,useGemini:DB.settings.useGemini}};
-    const json=JSON.stringify(data,null,1);
+    const json=JSON.stringify(buildFullBackup(),null,1);
+    const fname='mlstudy-backup-'+todayStr()+'.json';
     try{
       const blob=new Blob([json],{type:'application/json'});
       const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-      a.download='mlstudy-backup-'+todayStr()+'.json';a.click();
+      a.download=fname;a.click();
       setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-      toast('エクスポートしました');
+      toast('全ノートをエクスポートしました（'+DB.notebooks.length+'冊）');
     }catch(e){
       showExportFallback(json);
     }
@@ -1880,20 +2025,17 @@ function bindSettings(){
     r.onload=()=>{
       try{
         const d=JSON.parse(r.result);
-        if(d.app!=='mlstudy'||!d.contents||!Array.isArray(d.contents.terms))throw new Error('形式が違います');
-        if(!confirm('現在のデータをインポート内容で置き換えます。よろしいですか？'))return;
-        DB.contents=d.contents;DB.quizzes=d.quizzes||[];DB.weak=d.weak||{terms:{},quizzes:{}};
-        DB.stats=d.stats||{sessions:[],terms:{}};DB.pool=d.pool||{};
-        if(d.settings)Object.assign(DB.settings,{theme:d.settings.theme||DB.settings.theme,model:d.settings.model||DB.settings.model,useGemini:d.settings.useGemini!==undefined?d.settings.useGemini:DB.settings.useGemini});
-        saveContents();saveQuizzes();saveWeak();saveStats();savePool();saveSettings();
-        applyTheme();renderAll();toast('インポートしました');
+        if(d.app!=='mlstudy')throw new Error('形式が違います');
+        if(d.kind==='full'&&d.notebooks){importFull(d);} /* 全ノート一括バックアップ */
+        else if(d.contents&&Array.isArray(d.contents.terms)){importSingleAsNew(d,file);} /* 旧・単一ノート形式は新規ノートとして取り込み */
+        else throw new Error('形式が違います');
       }catch(err){toast('インポートに失敗: '+err.message,true);}
       e.target.value='';
     };
     r.readAsText(file);
   });
   $('#btnRestoreInitial').addEventListener('click',()=>{
-    if(!confirm('初期コンテンツのうち、削除・変更されたカードを元の内容で復元します。\n自分で追加したカードやクイズはそのまま残ります。よろしいですか？'))return;
+    if(!confirm('このノートに、見本の機械学習教材（初期コンテンツ）を追加・復元します。\n自分で追加したカードやクイズはそのまま残ります。よろしいですか？'))return;
     const seedC=seedContents(),seedQ=seedQuizzes();
     seedC.categories.forEach(sc=>{
       const ex=getCat(sc.id);
@@ -1912,9 +2054,9 @@ function bindSettings(){
     saveContents();saveQuizzes();savePool();renderAll();toast('初期コンテンツを復元しました');
   });
   $('#btnResetAll').addEventListener('click',()=>{
-    if(!confirm('すべてのデータ（コンテンツ・クイズ・弱点・統計・生成問題・設定）を削除して初期状態に戻します。\nこの操作は元に戻せません。よろしいですか？'))return;
+    if(!confirm('すべてのノートとデータ（全ノートのコンテンツ・クイズ・弱点・統計・生成問題・設定）を削除して初期状態に戻します。\nこの操作は元に戻せません。よろしいですか？'))return;
     if(!confirm('本当によろしいですか？ 必要ならキャンセルして先にエクスポートしてください。'))return;
-    Object.values(LS).forEach(k=>localStorage.removeItem(k));
+    try{Object.keys(localStorage).filter(k=>k.indexOf('mlstudy.')===0).forEach(k=>localStorage.removeItem(k));}catch(e){}
     location.reload();
   });
 }
@@ -1952,6 +2094,9 @@ function switchView(name){
   const target=$('#view-'+name)||$('#view-learn');
   target.classList.add('on');
   $$('.tab').forEach(t=>t.classList.toggle('on',t.dataset.view===name));
+  $('#topbarSub').classList.toggle('on',name==='learn'); /* 目次・検索は学習タブのときヘッダーに常駐 */
+  updateHeaderHeight();
+  if(name!=='learn')closeTocDrawer();
   DB.ui.view=name;persistHash();saveUISoon();
   if(name==='quiz'){
     if(QZ.active){$('#quizSetup').classList.add('hidden');$('#quizStage').classList.remove('hidden');}
@@ -1961,10 +2106,184 @@ function switchView(name){
   if(name==='settings')renderSettings();
   if(name==='learn'){const heavy=!learnRestored;learnRestored=true;restoreLearnScroll(heavy);} /* 学習を表示するたびに位置を復元。display:noneで先頭に戻る現象への対処 */
 }
+let _headerH=120;
+function updateHeaderHeight(){
+  const h=$('.topbar');if(!h)return;
+  _headerH=h.offsetHeight||120;
+  document.documentElement.style.setProperty('--header-h',_headerH+'px');
+}
 function renderAll(){renderLearn();renderQuizSetup();renderReview();}
+
+/* ==================== ノート（複数の学習ノート） ==================== */
+function activeNotebook(){return DB.notebooks.find(n=>n.id===DB.activeId)||DB.notebooks[0];}
+function updateNotebookLabel(){const el=$('#nbName');if(el)el.textContent=activeNotebook().name;}
+function notebookTermCount(id){
+  if(id===DB.activeId)return DB.contents.terms.length;
+  try{return (load(nbKeyOf(id,'contents'),{terms:[]}).terms||[]).length;}catch(e){return 0;}
+}
+function switchNotebook(id){
+  if(id===DB.activeId){closeNotebookMenu();closeModal();return;}
+  flushUI();
+  DB.activeId=id;saveNotebooks();
+  loadActiveNotebook();
+  learnRestored=false;QZ={active:false};
+  closeNotebookMenu();closeModal();
+  updateNotebookLabel();
+  renderAll();
+  const v=['learn','quiz','review','settings'].includes(DB.ui.view)?DB.ui.view:'learn';
+  switchView(v);
+  toast('「'+activeNotebook().name+'」に切り替えました');
+}
+function createNotebook(name){
+  const id='nb-'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  DB.notebooks.push({id,name:name,createdAt:Date.now()});
+  save(nbKeyOf(id,'contents'),{version:1,categories:[],terms:[]});
+  save(nbKeyOf(id,'quizzes'),[]);
+  saveNotebooks();
+  return id;
+}
+function deleteNotebook(id){
+  if(DB.notebooks.length<=1){toast('最後のノートは削除できません',true);return;}
+  const nb=DB.notebooks.find(n=>n.id===id);if(!nb)return;
+  if(!confirm('ノート「'+nb.name+'」を削除しますか？\nこのノートの用語・クイズ・弱点・統計がすべて削除されます。元に戻せません。'))return;
+  ['contents','quizzes','weak','stats','pool','ui'].forEach(b=>{try{localStorage.removeItem(nbKeyOf(id,b));}catch(e){}});
+  DB.notebooks=DB.notebooks.filter(n=>n.id!==id);
+  if(DB.activeId===id){
+    DB.activeId=DB.notebooks[0].id;saveNotebooks();loadActiveNotebook();learnRestored=false;QZ={active:false};
+    updateNotebookLabel();renderAll();
+    const v=['learn','quiz','review','settings'].includes(DB.ui.view)?DB.ui.view:'learn';switchView(v);
+  }else{saveNotebooks();}
+  openNotebookManager();
+  toast('ノートを削除しました');
+}
+function openNotebookForm(id){
+  const nb=id?DB.notebooks.find(n=>n.id===id):null;
+  const bg=openModal(`<h2>${nb?'ノート名を変更':'新しいノートを作成'}</h2>
+    <div class="field"><label>ノート名</label><input id="nbFormName" value="${nb?esc(nb.name):''}" placeholder="例: 統計検定2級 / 英単語 / 資格勉強"></div>
+    ${nb?'':'<p class="muted" style="margin:0">空のノートを作成します。作成後、「テキストから一括追加」やカテゴリ追加で内容を入れられます。</p>'}
+    <div class="modal-foot"><button class="btn" onclick="openNotebookManager()">戻る</button><button class="btn pri" id="nbFormSave">${nb?'保存':'作成して切り替え'}</button></div>`);
+  bg.querySelector('#nbFormSave').onclick=()=>{
+    const name=bg.querySelector('#nbFormName').value.trim();
+    if(!name){toast('ノート名を入力してください',true);return;}
+    if(nb){nb.name=name;saveNotebooks();updateNotebookLabel();openNotebookManager();toast('ノート名を変更しました');}
+    else{const newId=createNotebook(name);switchNotebook(newId);}
+  };
+}
+/* ノート切替ドロップダウン（トップバー直下に開く） */
+function closeNotebookMenu(){
+  const m=$('#nbMenu');if(m)m.remove();
+  const b=$('#nbSwitch');if(b)b.classList.remove('open');
+}
+function toggleNotebookMenu(){
+  if($('#nbMenu')){closeNotebookMenu();return;}
+  const rows=DB.notebooks.map(nb=>{
+    const active=nb.id===DB.activeId;
+    return `<button class="nbm-item${active?' on':''}" role="menuitem" onclick="switchNotebook('${nb.id}')">
+      <span class="nbm-check">${active?'✓':''}</span>
+      <span class="nbm-name">${esc(nb.name)}</span>
+      <span class="nbm-count">${notebookTermCount(nb.id)}語</span>
+    </button>`;
+  }).join('');
+  const el=document.createElement('div');
+  el.id='nbMenu';el.className='nbm-wrap';
+  el.innerHTML=`<div class="nbm-scrim" onclick="closeNotebookMenu()"></div>
+    <div class="nbm-panel" role="menu">
+      <div class="nbm-head">ノートを切り替え</div>
+      <div class="nbm-list">${rows}</div>
+      <div class="nbm-foot">
+        <button class="nbm-action pri" onclick="closeNotebookMenu();openNotebookForm(null)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>新しいノートを作成</button>
+        <button class="nbm-action" onclick="closeNotebookMenu();openNotebookManager()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>ノートを管理（改名・削除）</button>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+  const btn=$('#nbSwitch');btn.classList.add('open');
+  const r=btn.getBoundingClientRect();
+  const panel=el.querySelector('.nbm-panel');
+  const pw=Math.min(window.innerWidth-16,Math.max(Math.round(r.width),260));
+  panel.style.width=pw+'px';
+  panel.style.top=Math.round(r.bottom+10)+'px';
+  panel.style.left=Math.round(Math.max(8,Math.min(r.left,window.innerWidth-pw-8)))+'px';
+  requestAnimationFrame(()=>el.classList.add('show'));
+  window.addEventListener('scroll',closeNotebookMenu,{once:true});
+  window.addEventListener('resize',closeNotebookMenu,{once:true});
+}
+function openNotebookManager(){
+  const rows=DB.notebooks.map(nb=>{
+    const active=nb.id===DB.activeId;
+    return `<div class="nb-row${active?' on':''}">
+      <button class="nb-pick" onclick="switchNotebook('${nb.id}')">
+        <span class="nb-dot">${active?'●':'○'}</span>
+        <span class="nb-rowname">${esc(nb.name)}</span>
+        <span class="muted nb-count">${notebookTermCount(nb.id)}語</span>
+      </button>
+      <button class="btn sm ghost" onclick="openNotebookForm('${nb.id}')">改名</button>
+      <button class="btn sm ghost" style="color:var(--ng)" ${DB.notebooks.length<=1?'disabled':''} onclick="deleteNotebook('${nb.id}')">削除</button>
+    </div>`;
+  }).join('');
+  openModal(`<h2>ノート</h2>
+    <p class="muted" style="margin:0 0 12px">科目やテーマごとにノートを分けられます。タップで切り替わります。</p>
+    <div class="nb-list">${rows}</div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">閉じる</button><button class="btn pri" onclick="openNotebookForm(null)">＋ 新しいノートを作成</button></div>`);
+}
+
+/* ===== 全ノート一括バックアップ / 復元 ===== */
+function buildFullBackup(){
+  flushUI();
+  saveContents();saveQuizzes();saveWeak();saveStats();savePool(); /* 現在のノートの最新をstorageへ確定 */
+  const data={};
+  DB.notebooks.forEach(nb=>{
+    data[nb.id]={
+      contents:load(nbKeyOf(nb.id,'contents'),{version:1,categories:[],terms:[]}),
+      quizzes:load(nbKeyOf(nb.id,'quizzes'),[]),
+      weak:load(nbKeyOf(nb.id,'weak'),{terms:{},quizzes:{}}),
+      stats:load(nbKeyOf(nb.id,'stats'),{sessions:[],terms:{}}),
+      pool:load(nbKeyOf(nb.id,'pool'),{})
+    };
+  });
+  return {app:'mlstudy',kind:'full',version:1,exportedAt:new Date().toISOString(),
+    notebooks:DB.notebooks.map(n=>({id:n.id,name:n.name,createdAt:n.createdAt||Date.now(),seed:!!n.seed})),
+    data,settings:{theme:DB.settings.theme,model:DB.settings.model,useGemini:DB.settings.useGemini}};
+}
+function importFull(d){
+  const list=d.notebooks||[];
+  if(!list.length)throw new Error('ノートが含まれていません');
+  let added=0,updated=0;
+  list.forEach(meta=>{
+    const nd=(d.data||{})[meta.id]||{};
+    const exists=DB.notebooks.some(n=>n.id===meta.id);
+    save(nbKeyOf(meta.id,'contents'),nd.contents||{version:1,categories:[],terms:[]});
+    save(nbKeyOf(meta.id,'quizzes'),nd.quizzes||[]);
+    save(nbKeyOf(meta.id,'weak'),nd.weak||{terms:{},quizzes:{}});
+    save(nbKeyOf(meta.id,'stats'),nd.stats||{sessions:[],terms:{}});
+    save(nbKeyOf(meta.id,'pool'),nd.pool||{});
+    if(exists){const nb=DB.notebooks.find(n=>n.id===meta.id);nb.name=meta.name;nb.seed=!!meta.seed;updated++;}
+    else{DB.notebooks.push({id:meta.id,name:meta.name,createdAt:meta.createdAt||Date.now(),seed:!!meta.seed});added++;}
+  });
+  if(d.settings)Object.assign(DB.settings,{theme:d.settings.theme||DB.settings.theme,model:d.settings.model||DB.settings.model,useGemini:d.settings.useGemini!==undefined?d.settings.useGemini:DB.settings.useGemini});
+  if(!DB.notebooks.some(n=>n.id===DB.activeId))DB.activeId=DB.notebooks[0].id;
+  saveNotebooks();saveSettings();applyTheme();
+  loadActiveNotebook();learnRestored=false;QZ={active:false};updateNotebookLabel();renderAll();
+  const v=['learn','quiz','review','settings'].includes(DB.ui.view)?DB.ui.view:'learn';switchView(v);
+  toast('一括復元しました（新規'+added+'冊・更新'+updated+'冊）');
+}
+function importSingleAsNew(d,file){
+  const base=(d.notebook||(file&&file.name.replace(/\.json$/i,''))||'インポートしたノート').slice(0,40);
+  let name=base,k=2;while(DB.notebooks.some(n=>n.name===name)){name=base+' ('+(k++)+')';}
+  const id=createNotebook(name);
+  save(nbKeyOf(id,'contents'),d.contents);
+  save(nbKeyOf(id,'quizzes'),d.quizzes||[]);
+  save(nbKeyOf(id,'weak'),d.weak||{terms:{},quizzes:{}});
+  save(nbKeyOf(id,'stats'),d.stats||{sessions:[],terms:{}});
+  save(nbKeyOf(id,'pool'),d.pool||{});
+  if(d.settings)Object.assign(DB.settings,{theme:d.settings.theme||DB.settings.theme,model:d.settings.model||DB.settings.model,useGemini:d.settings.useGemini!==undefined?d.settings.useGemini:DB.settings.useGemini});
+  saveSettings();applyTheme();switchNotebook(id);
+  toast('「'+name+'」として取り込みました');
+}
 
 /* ==================== 配線・初期化 ==================== */
 function bindUI(){
+  $('#nbSwitch').addEventListener('click',toggleNotebookMenu);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeNotebookMenu();});
   $('#tabs').addEventListener('click',e=>{
     const b=e.target.closest('.tab');if(b)switchView(b.dataset.view);
   });
@@ -1994,6 +2313,7 @@ function bindUI(){
 function boot(){
   try{if('scrollRestoration' in history)history.scrollRestoration='manual';}catch(e){} /* 標準の自動復元を切り、自前の復元と競合させない */
   initDB();applyTheme();bindUI();bindSettings();
+  updateNotebookLabel();
   renderAll();
   const valid=['learn','quiz','review','settings'];
   const hp=parseHash();
@@ -2009,6 +2329,8 @@ function boot(){
     start=valid.includes(DB.ui.view)?DB.ui.view:'learn';
   }
   switchView(start);
+  updateHeaderHeight();
+  window.addEventListener('resize',updateHeaderHeight);
 }
 window.addEventListener('hashchange',()=>{
   const hp=parseHash();

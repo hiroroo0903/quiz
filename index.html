@@ -45,10 +45,13 @@ mark{background:var(--mark);color:var(--mark-ink);padding:0 2px;border-radius:3p
 /* ============ app shell ============ */
 .topbar{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
 .topbar-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:18px 16px 10px}
-.topbar-sub{display:none;align-items:stretch;gap:8px;max-width:1180px;margin:0 auto;padding:0 16px 14px}
+.topbar-sub{display:none;flex-direction:column;gap:9px;max-width:1180px;margin:0 auto;padding:0 16px 14px}
 .topbar-sub.on{display:flex}
-.topbar-sub .toc-toggle{flex-shrink:0;padding:0 13px}
-.topbar-sub .searchbox{flex:1;min-width:0}
+.ts-search{display:flex;align-items:stretch;gap:8px}
+.ts-search .toc-toggle{flex-shrink:0;padding:0 13px}
+.ts-search .searchbox{flex:1;min-width:0}
+.ts-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ts-actions>*{flex-shrink:0}
 .brand{flex:1;min-width:0;font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.04em;display:flex;flex-direction:column;align-items:stretch;line-height:1.15}
 .brand small{font-family:var(--sans);font-size:11px;color:var(--ink2);font-weight:400;display:block;letter-spacing:.12em;margin-top:-2px}
 .nb-switch{width:100%;display:flex;flex-direction:column;align-items:stretch;gap:2px;background:var(--accent-soft);border:1px solid var(--accent-line);padding:9px 15px 10px 15px;border-radius:12px;cursor:pointer}
@@ -131,12 +134,9 @@ mark{background:var(--mark);color:var(--mark-ink);padding:0 2px;border-radius:3p
 .toc-terms{margin:0;padding:0 0 4px 14px;list-style:none}
 .toc-terms a{display:block;padding:2px 8px;border-radius:6px;color:var(--ink2);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .toc-terms a:hover{background:var(--surface2);color:var(--ink);text-decoration:none}
-.learn-tools{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
-.lt-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.lt-right{display:flex;gap:8px;flex-wrap:wrap}
-@media(min-width:640px){.lt-right{margin-left:auto}}
 .lt-group{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;flex-shrink:0}
-.lt-group button{border:none;background:var(--surface);color:var(--ink2);padding:8px 14px;font-size:13.5px;white-space:nowrap}
+.lt-group button{border:none;background:var(--surface);color:var(--ink2);padding:9px 14px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center}
+.lt-group button svg{width:17px;height:17px;display:block}
 .lt-group button:hover{background:var(--surface2);color:var(--ink)}
 .lt-group button+button{border-left:1px solid var(--line2)}
 .searchbox{position:relative;flex:1;min-width:0}
@@ -295,28 +295,26 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
     </nav>
   </div>
   <div class="topbar-sub" id="topbarSub">
-    <button class="btn toc-toggle" id="tocToggle" aria-label="目次"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
-    <div class="searchbox">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input type="search" id="searchInput" placeholder="用語・定義を検索…" autocomplete="off">
+    <div class="ts-search">
+      <button class="btn toc-toggle" id="tocToggle" aria-label="目次"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div class="searchbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="search" id="searchInput" placeholder="用語・定義を検索…" autocomplete="off">
+      </div>
+    </div>
+    <div class="ts-actions">
+      <div class="lt-group">
+        <button id="btnExpandAll" aria-label="すべて開く" title="すべて開く"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 13l6 6 6-6"/><path d="M6 5l6 6 6-6"/></svg></button>
+        <button id="btnCollapseAll" aria-label="すべて閉じる" title="すべて閉じる"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 11l6-6 6 6"/><path d="M6 19l6-6 6 6"/></svg></button>
+      </div>
+      <button class="btn sm" id="btnAddCat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>カテゴリ追加</button>
+      <button class="btn sm pri" id="btnBulkImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>一括追加</button>
     </div>
   </div>
 </header>
 
 <!-- ============ 学習ビュー ============ -->
 <main id="view-learn" class="view">
-  <div class="learn-tools">
-    <div class="lt-actions">
-      <div class="lt-group">
-        <button id="btnExpandAll">すべて開く</button>
-        <button id="btnCollapseAll">すべて閉じる</button>
-      </div>
-      <div class="lt-right">
-        <button class="btn sm" id="btnAddCat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>カテゴリ追加</button>
-        <button class="btn sm pri" id="btnBulkImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>一括追加</button>
-      </div>
-    </div>
-  </div>
   <div class="learn-wrap">
     <nav class="toc" id="toc" aria-label="目次">
       <button class="btn sm ghost toc-close" id="tocClose">閉じる ✕</button>
@@ -1499,7 +1497,7 @@ function openImportPreview(cats){
 async function callGemini(userText,systemText){
   const key=DB.settings.apiKey, model=(DB.settings.model||'gemini-2.5-flash').trim();
   if(!key)throw new Error('APIキーが未設定です');
-  const body={contents:[{role:'user',parts:[{text:userText}]}],generationConfig:{responseMimeType:'application/json',temperature:0.7}};
+  const body={contents:[{role:'user',parts:[{text:userText}]}],generationConfig:{responseMimeType:'application/json',temperature:0.4,maxOutputTokens:8192}};
   if(systemText)body.systemInstruction={parts:[{text:systemText}]};
   const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`,
     {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -1509,15 +1507,17 @@ async function callGemini(userText,systemText){
     throw new Error(msg);
   }
   const j=await res.json();
-  const text=(((j.candidates||[])[0]||{}).content||{}).parts?.map(p=>p.text||'').join('')||'';
+  const cand=(j.candidates||[])[0]||{};
+  const text=((cand.content||{}).parts||[]).map(p=>p.text||'').join('')||'';
   if(!text)throw new Error('応答が空でした');
+  if(cand.finishReason&&cand.finishReason!=='STOP'&&cand.finishReason!=='MAX_TOKENS'){/* 安全側: 続行 */}
   const clean=text.replace(/^\s*```(?:json)?/,'').replace(/```\s*$/,'').trim();
   return JSON.parse(clean);
 }
 /* 用語カード整形（一括取り込み用） */
 async function geminiStructure(chunk){
-  const sys='あなたは機械学習の学習ノートを構造化するアシスタントです。与えられたテキストを、次のJSONだけで返してください（前置き・コードフェンス禁止）:\n{"categories":[{"name":"カテゴリ名","terms":[{"name":"用語名","definition":"定義・説明（原文を尊重しつつ日本語で簡潔に）","formula":"数式（なければ空文字。上付きは^{ }、下付きは_{ }で表記）","keypoints":["定義文中に登場する重要フレーズを2〜3個"]}]}]}\nkeypointsは必ずdefinitionの文中にそのまま含まれる文字列にしてください。';
-  return callGemini('次のテキストを構造化してください:\n\n'+chunk,sys);
+  const sys='あなたは学習ノートを構造化するアシスタントです。与えられたテキストを、内容を要約・省略・言い換えせず、原文の文章をそのまま使って次のJSONだけで返してください（前置き・コードフェンス禁止）:\n{"categories":[{"name":"カテゴリ名","terms":[{"name":"用語名","definition":"その用語の説明。原文の該当箇所を一字一句そのまま。文字・記号・数値・箇条書き・改行を削らない","formula":"数式があれば原文のまま（上付きは^{ }、下付きは_{ }）。なければ空文字","keypoints":["definitionの文中にそのまま含まれる重要語を2〜3個"]}]}]}\n厳守事項: (1) definitionは絶対に要約・短縮・言い換えをせず、原文の文をそのまま保持する。(2) 元テキストのすべての本文をいずれかのdefinitionに割り当て、内容を落とさない。(3) 見出し・項目名をname、その下の本文をdefinitionにする。(4) keypointsは必ずdefinition内に存在する文字列にする。';
+  return callGemini('次のテキストを、内容を一切省略せず構造化してください:\n\n'+chunk,sys);
 }
 /* 4択問題生成 */
 async function geminiGenQuestions(terms){

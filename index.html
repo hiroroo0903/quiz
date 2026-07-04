@@ -122,6 +122,10 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
 .term-def{white-space:pre-wrap}
 .kv-label{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--accent-ink);background:var(--accent-soft);border-radius:5px;padding:1px 8px;margin:10px 0 4px}
 .formula{font-family:var(--mono);font-size:14.5px;background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:8px;padding:10px 14px;margin:4px 0;white-space:pre-wrap;line-height:2;overflow-x:auto}
+.mfrac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em}
+.mfrac>.mnum{border-bottom:1px solid currentColor;padding:0 .4em;line-height:1.4}
+.mfrac>.mden{padding:0 .4em;line-height:1.4}
+.msqrt{border-top:1px solid currentColor;padding:0 .12em;margin-left:-.05em}
 .pycode{font-family:var(--mono);font-size:13.5px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:4px 0;white-space:pre-wrap;overflow-x:auto}
 .note-box{background:var(--warn-soft);border-left:3px solid var(--warn);border-radius:0 8px 8px 0;padding:8px 14px;margin:8px 0;font-size:14.5px;white-space:pre-wrap}
 .fig-box{margin:12px 0 4px;text-align:center}
@@ -766,13 +770,55 @@ const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMo
 const daysBetween=(iso,now)=>Math.max(0,(now-new Date(iso).getTime())/86400000);
 function toast(msg,bad){const t=document.createElement('div');t.className='toast'+(bad?' ng':'');t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>t.remove(),3200);}
 
-/* 数式・本文の整形: エスケープ → ^{}/_{}・^x/_x を sup/sub に変換 */
-function fmtMath(raw){
-  let s=esc(raw);
-  s=s.replace(/\^\{([^}]+)\}/g,'<sup>$1</sup>').replace(/_\{([^}]+)\}/g,'<sub>$1</sub>');
-  s=s.replace(/\^([+\-−]?[0-9A-Za-zθμσβεαγλπŵ̂]+)/g,'<sup>$1</sup>');
-  return s;
+/* 数式整形: LaTeX風記法（\frac \sqrt \sum 上下付き ギリシャ文字 等）を解釈してHTML化。
+   外部ライブラリ不使用。素の { } は可視の括弧として残し、コマンド/上下付きの引数としての { } のみ消費する。 */
+const MATH_SYM={alpha:'α',beta:'β',gamma:'γ',delta:'δ',epsilon:'ε',varepsilon:'ε',zeta:'ζ',eta:'η',theta:'θ',vartheta:'ϑ',iota:'ι',kappa:'κ',lambda:'λ',mu:'μ',nu:'ν',xi:'ξ',omicron:'ο',pi:'π',rho:'ρ',sigma:'σ',tau:'τ',upsilon:'υ',phi:'φ',varphi:'φ',chi:'χ',psi:'ψ',omega:'ω',Gamma:'Γ',Delta:'Δ',Theta:'Θ',Lambda:'Λ',Xi:'Ξ',Pi:'Π',Sigma:'Σ',Upsilon:'Υ',Phi:'Φ',Psi:'Ψ',Omega:'Ω',partial:'∂',nabla:'∇',infty:'∞',cdot:'·',cdots:'⋯',ldots:'…',dots:'…',times:'×',div:'÷',ast:'∗',star:'⋆',pm:'±',mp:'∓',leq:'≤',le:'≤',geq:'≥',ge:'≥',neq:'≠',ne:'≠',approx:'≈',sim:'∼',simeq:'≃',cong:'≅',equiv:'≡',propto:'∝',ll:'≪',gg:'≫',in:'∈',notin:'∉',ni:'∋',subset:'⊂',subseteq:'⊆',supset:'⊃',supseteq:'⊇',cup:'∪',cap:'∩',emptyset:'∅',forall:'∀',exists:'∃',neg:'¬',land:'∧',lor:'∨',rightarrow:'→',to:'→',leftarrow:'←',leftrightarrow:'↔',Rightarrow:'⇒',Leftarrow:'⇐',Leftrightarrow:'⇔',mapsto:'↦',odot:'⊙',otimes:'⊗',oplus:'⊕',circ:'∘',bullet:'∙',sum:'∑',prod:'∏',coprod:'∐',int:'∫',oint:'∮',iint:'∬',sqrt:'√',angle:'∠',perp:'⊥',parallel:'∥',hbar:'ℏ',ell:'ℓ',Re:'ℜ',Im:'ℑ',aleph:'ℵ',prime:'′',degree:'°',cdotp:'·',lfloor:'⌊',rfloor:'⌋',lceil:'⌈',rceil:'⌉',langle:'⟨',rangle:'⟩',geqslant:'⩾',leqslant:'⩽'};
+function mathToHTML(str){
+  function convert(txt){
+    let i=0;const n=txt.length;let out='';
+    function rawGroup(){ /* txt[i]==='{' の前提。対応する } まで生テキストを取り出す */
+      let depth=0,buf='';
+      for(;i<n;i++){const c=txt[i];
+        if(c==='{'){depth++;if(depth===1)continue;}
+        else if(c==='}'){depth--;if(depth===0){i++;return buf;}}
+        buf+=c;
+      }
+      return buf;
+    }
+    function arg(){
+      while(i<n&&txt[i]===' ')i++;
+      if(txt[i]==='{')return convert(rawGroup());
+      if(txt[i]==='\\'){i++;let name='';if(/[A-Za-z]/.test(txt[i]||'')){while(i<n&&/[A-Za-z]/.test(txt[i]))name+=txt[i++];}else{name=txt[i++]||'';}return cmd(name);}
+      const ch=txt[i++];return ch===undefined?'':esc(ch);
+    }
+    function cmd(name){
+      if(name==='frac'||name==='dfrac'||name==='tfrac'){const a=arg(),b=arg();return '<span class="mfrac"><span class="mnum">'+a+'</span><span class="mden">'+b+'</span></span>';}
+      if(name==='sqrt'){const a=arg();return '√<span class="msqrt">'+a+'</span>';}
+      if(name==='hat'||name==='widehat'){return arg()+'\u0302';}
+      if(name==='bar'||name==='overline'){return arg()+'\u0304';}
+      if(name==='vec'){return arg()+'\u20D7';}
+      if(name==='tilde'||name==='widetilde'){return arg()+'\u0303';}
+      if(name==='dot'){return arg()+'\u0307';}
+      if(name==='text'||name==='mathrm'||name==='mathbf'||name==='mathit'||name==='mathcal'||name==='mathbb'||name==='operatorname'||name==='boldsymbol')return arg();
+      if(name==='left'||name==='right'||name==='big'||name==='Big'||name==='bigg'||name==='Bigg')return '';
+      if(name in MATH_SYM)return MATH_SYM[name];
+      if(name===','||name===';'||name===':'||name==='!'||name===' '||name==='quad'||name==='qquad'||name==='enspace'||name==='thinspace')return ' ';
+      if(name==='\\')return '\n';
+      if(name==='{'||name==='}'||name==='%'||name==='#'||name==='&'||name==='_'||name==='^'||name==='$')return esc(name);
+      return esc(name); /* 未知のコマンドはバックスラッシュを外して名前だけ表示 */
+    }
+    while(i<n){
+      const c=txt[i];
+      if(c==='\\'){i++;let name='';if(/[A-Za-z]/.test(txt[i]||'')){while(i<n&&/[A-Za-z]/.test(txt[i]))name+=txt[i++];}else{name=txt[i++]||'';}out+=cmd(name);}
+      else if(c==='^'){i++;out+='<sup>'+arg()+'</sup>';}
+      else if(c==='_'){i++;out+='<sub>'+arg()+'</sub>';}
+      else{out+=esc(c);i++;}
+    }
+    return out;
+  }
+  return convert(String(str==null?'':str));
 }
+function fmtMath(raw){return mathToHTML(raw);}
 /* 定義・補足の表示: キーポイントを<mark>で強調しつつ数式変換 */
 function fmtDef(raw,kps){
   let s=esc(raw);

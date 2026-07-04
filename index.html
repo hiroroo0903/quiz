@@ -135,6 +135,13 @@ mark{background:var(--mark);color:var(--mark-ink);padding:0 2px;border-radius:3p
 .toc-terms a{display:block;padding:2px 8px;border-radius:6px;color:var(--ink2);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .toc-terms a:hover{background:var(--surface2);color:var(--ink);text-decoration:none}
 .lt-group{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;flex-shrink:0}
+.merge-list{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow-y:auto;margin-bottom:4px}
+.merge-opt{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer}
+.merge-opt:hover{background:var(--surface2)}
+.merge-opt:has(input:checked){border-color:var(--accent-line);background:var(--accent-soft)}
+.merge-opt input{accent-color:var(--accent);width:18px;height:18px;flex-shrink:0}
+.merge-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.merge-cnt{flex-shrink:0}
 .lt-group button{border:none;background:var(--surface);color:var(--ink2);padding:9px 14px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center}
 .lt-group button svg{width:17px;height:17px;display:block}
 .lt-group button:hover{background:var(--surface2);color:var(--ink)}
@@ -865,6 +872,7 @@ function mathToHTML(str){
       if(c==='\\'){i++;let name='';if(/[A-Za-z]/.test(txt[i]||'')){while(i<n&&/[A-Za-z]/.test(txt[i]))name+=txt[i++];}else{name=txt[i++]||'';}out+=cmd(name);}
       else if(c==='^'){i++;out+='<sup>'+arg()+'</sup>';}
       else if(c==='_'){i++;out+='<sub>'+arg()+'</sub>';}
+      else if(c==='$'){i++;} /* $…$ はインライン数式の区切り記号。表示せず中身だけ数式として扱う */
       else{out+=esc(c);i++;}
     }
     return out;
@@ -872,9 +880,16 @@ function mathToHTML(str){
   return convert(String(str==null?'':str));
 }
 function fmtMath(raw){return mathToHTML(raw);}
-/* 定義・補足の表示: キーポイントを<mark>で強調しつつ数式変換 */
+/* 定義・補足の表示: $…$ をインライン数式として描画し、それ以外はキーポイントを<mark>で強調 */
 function fmtDef(raw,kps){
-  let s=esc(raw);
+  const parts=String(raw==null?'':raw).split(/(\$[^$]*\$)/g);
+  return parts.map(seg=>{
+    if(seg.length>=2&&seg[0]==='$'&&seg[seg.length-1]==='$')return mathToHTML(seg.slice(1,-1));
+    return proseSeg(seg,kps);
+  }).join('');
+}
+function proseSeg(seg,kps){
+  let s=esc(seg);
   (kps||[]).slice().sort((a,b)=>b.length-a.length).forEach(kp=>{
     if(!kp)return;
     const e=esc(kp).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -1071,6 +1086,7 @@ function renderLearn(){
           <div class="cat-actions">
             <button class="btn sm ghost" onclick="openTermForm(null,'${c.id}')">＋ 用語を追加</button>
             <button class="btn sm ghost" onclick="openCatForm('${c.id}')">分類名を編集</button>
+            ${cats.length>1?`<button class="btn sm ghost" onclick="openCatMerge('${c.id}')">分類を統合</button>`:''}
             <button class="btn sm ghost" style="color:var(--ng)" onclick="deleteCat('${c.id}')">分類を削除</button>
           </div>
         </div>
@@ -1246,6 +1262,35 @@ function deleteCat(catId){
   DB.contents.categories=DB.contents.categories.filter(x=>x.id!==catId);
   saveContents();renderLearn();renderQuizSetup();renderReview();toast('カテゴリを削除しました');
 }
+function openCatMerge(sourceId){
+  const src=getCat(sourceId);if(!src)return;
+  const others=DB.contents.categories.filter(c=>c.id!==sourceId).slice().sort((a,b)=>a.order-b.order);
+  if(!others.length){toast('統合先となる他のカテゴリがありません',true);return;}
+  const n=termsOf(sourceId).length;
+  const opts=others.map(c=>`<label class="merge-opt"><input type="radio" name="mergeTarget" value="${c.id}"><span class="merge-name">${esc(c.name)}</span><span class="muted merge-cnt">${termsOf(c.id).length}件</span></label>`).join('');
+  const bg=openModal(`<h2>分類を統合</h2>
+    <p class="muted" style="margin:0 0 12px">「<b>${esc(src.name)}</b>」の用語（${n}件）を、選んだカテゴリへまとめて移動します。移動後「${esc(src.name)}」は削除されますが、用語・クイズ・弱点記録は失われません。</p>
+    <div class="merge-list">${opts}</div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" id="mergeGo">統合する</button></div>`);
+  bg.querySelector('#mergeGo').onclick=()=>{
+    const sel=bg.querySelector('input[name=mergeTarget]:checked');
+    if(!sel){toast('統合先を選んでください',true);return;}
+    mergeCategories(sourceId,sel.value);closeModal();
+  };
+}
+function mergeCategories(sourceId,targetId){
+  if(sourceId===targetId)return;
+  const src=getCat(sourceId),tgt=getCat(targetId);
+  if(!src||!tgt)return;
+  const moved=termsOf(sourceId);
+  let base=termsOf(targetId).reduce((m,t)=>Math.max(m,t.order||0),-1)+1; /* 統合先の末尾に追加 */
+  moved.forEach((t,i)=>{t.cat=targetId;t.order=base+i;});
+  DB.contents.categories=DB.contents.categories.filter(c=>c.id!==sourceId);
+  DB.contents.categories.sort((a,b)=>a.order-b.order).forEach((c,i)=>c.order=i); /* 並び順を詰め直す */
+  delete DB.ui.open[sourceId];
+  saveContents();saveUI();renderLearn();renderQuizSetup();renderReview();
+  toast(`「${src.name}」を「${tgt.name}」に統合しました（用語${moved.length}件を移動）`);
+}
 function removeTermData(termId){
   DB.contents.terms=DB.contents.terms.filter(t=>t.id!==termId);
   const qs=DB.quizzes.filter(q=>q.termId===termId).map(q=>q.id);
@@ -1307,16 +1352,17 @@ function deleteQuiz(termId,quizId){
 }
 
 /* ===== AIで問題を作成（用語カードごと） ===== */
-async function geminiGenOneQuestion(term,type){
+async function geminiGenOneQuestion(term,type,instr){
   const payload={name:term.name,definition:term.def,formula:term.formula||'',note:term.note||''};
+  const extra=(instr&&instr.trim())?('\n\n【ユーザーからの追加指示（内容の正確さを保った上で、できる限り反映すること）】\n'+instr.trim()):'';
   if(type==='written'){
-    const sys='あなたは学習教材から記述式の確認問題を作る出題者です。次のJSONだけで返してください（前置き・コードフェンス禁止）:\n{"q":"問題文（説明・違い・理由・導出などを問う）","modelAnswer":"模範解答（要点を簡潔に）","expl":"補足解説（なければ空文字）"}\n条件: 与えた定義・数式・補足の内容だけから作る／日本語。';
-    const r=await callGemini('次の用語から記述式問題を1問作成してください:\n'+JSON.stringify(payload),sys);
+    const sys='あなたは学習教材から記述式の確認問題を作る出題者です。次のJSONだけで返してください（前置き・コードフェンス禁止）:\n{"q":"問題文（説明・違い・理由・導出などを問う）","modelAnswer":"模範解答（要点を簡潔に）","expl":"補足解説（なければ空文字）"}\n条件: 与えた定義・数式・補足の内容に基づいて作る／日本語（追加指示で言語や形式が指定された場合はそれに従う）。';
+    const r=await callGemini('次の用語から記述式問題を1問作成してください:\n'+JSON.stringify(payload)+extra,sys);
     if(!r||typeof r.q!=='string'||!r.q.trim()||typeof r.modelAnswer!=='string'||!r.modelAnswer.trim())throw new Error('生成結果の形式が不正でした');
     return {type:'written',q:r.q.trim(),modelAnswer:r.modelAnswer.trim(),expl:(r.expl||'').trim()};
   }
-  const sys='あなたは学習教材から4択の確認問題を作る出題者です。次のJSONだけで返してください（前置き・コードフェンス禁止）:\n{"q":"問題文","choices":["選択肢1","選択肢2","選択肢3","選択肢4"],"answerIndex":0,"expl":"簡潔な解説"}\n条件: 与えた定義・数式・補足の内容だけから作る／選択肢は4つで互いに明確に区別でき正解は1つ／answerIndexはchoices内の正解位置（0〜3）／日本語。';
-  const r=await callGemini('次の用語から4択問題を1問作成してください:\n'+JSON.stringify(payload),sys);
+  const sys='あなたは学習教材から4択の確認問題を作る出題者です。次のJSONだけで返してください（前置き・コードフェンス禁止）:\n{"q":"問題文","choices":["選択肢1","選択肢2","選択肢3","選択肢4"],"answerIndex":0,"expl":"簡潔な解説"}\n条件: 与えた定義・数式・補足の内容に基づいて作る／選択肢は4つで互いに明確に区別でき正解は1つ／answerIndexはchoices内の正解位置（0〜3）／日本語（追加指示で言語や形式が指定された場合はそれに従う）。';
+  const r=await callGemini('次の用語から4択問題を1問作成してください:\n'+JSON.stringify(payload)+extra,sys);
   if(!validateGenQuestion(r))throw new Error('生成結果の形式が不正でした');
   return {type:'choice',q:r.q.trim(),choices:r.choices.map(c=>String(c).trim()),answerIndex:r.answerIndex,expl:(r.expl||'').trim()};
 }
@@ -1329,20 +1375,30 @@ function openAiQuiz(termId,type){
     return;
   }
   const bg=openModal(`<h2>${AI_ICON}AIで${type==='written'?'記述':'4択'}問題を作成</h2>
-    <p class="muted" style="margin:0 0 4px">用語「<b>${esc(term.name)}</b>」の内容から作成します。</p>
+    <p class="muted" style="margin:0 0 10px">用語「<b>${esc(term.name)}</b>」の内容から作成します。</p>
     <div id="aiqBody"></div>`,true);
-  aiGenAndShow(term,type,bg);
+  aiShowForm(term,type,bg,'');
+}
+function aiShowForm(term,type,bg,instr){
+  const body=bg.querySelector('#aiqBody');
+  body.innerHTML=`<div class="field"><label>追加の指示（任意）</label>
+      <textarea id="aiInstr" rows="3" placeholder="例：計算問題にする／選択肢を紛らわしくする／英語で出題／具体例を問う／${type==='written'?'簡潔に答えられる問いにする':'ひっかけを1つ入れる'} など">${esc(instr||'')}</textarea></div>
+    <p class="muted" style="margin:-2px 0 0;font-size:12px">空欄でも作成できます。用語の定義・数式・補足をもとに作問します。</p>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" id="aiGo">作成する</button></div>`;
+  body.querySelector('#aiGo').onclick=()=>aiGenAndShow(term,type,bg,body.querySelector('#aiInstr').value.trim());
+  const ta=body.querySelector('#aiInstr');if(ta)ta.focus();
 }
 function aiSpinner(){return '<div class="row" style="gap:10px;align-items:center;padding:16px 2px"><span class="spinner"></span><span class="muted">AIが問題を作成しています…</span></div>';}
-async function aiGenAndShow(term,type,bg){
+async function aiGenAndShow(term,type,bg,instr){
   const body=bg.querySelector('#aiqBody');
   body.innerHTML=aiSpinner();
   let q;
-  try{q=await geminiGenOneQuestion(term,type);}
+  try{q=await geminiGenOneQuestion(term,type,instr);}
   catch(e){
     body.innerHTML=`<div class="note-box" style="border-color:var(--ng)">生成に失敗しました。${esc(e.message||'通信エラー')}</div>
-      <div class="modal-foot"><button class="btn" onclick="closeModal()">閉じる</button><button class="btn pri" id="aiRetry">もう一度試す</button></div>`;
-    body.querySelector('#aiRetry').onclick=()=>aiGenAndShow(term,type,bg);
+      <div class="modal-foot"><button class="btn" onclick="closeModal()">閉じる</button><button class="btn" id="aiEditInstr">指示を変更</button><button class="btn pri" id="aiRetry">もう一度試す</button></div>`;
+    body.querySelector('#aiRetry').onclick=()=>aiGenAndShow(term,type,bg,instr);
+    body.querySelector('#aiEditInstr').onclick=()=>aiShowForm(term,type,bg,instr);
     return;
   }
   let preview;
@@ -1355,10 +1411,12 @@ async function aiGenAndShow(term,type,bg){
       <div class="written-ans"><b>模範解答</b><br>${fmtMath(q.modelAnswer)}</div>
       ${q.expl?`<div class="expl-box">${fmtMath(q.expl)}</div>`:''}`;
   }
-  body.innerHTML=`<p class="muted" style="margin:2px 0 10px">内容を確認して保存してください。保存後は「手動クイズ」から編集・削除でき、クイズ・復習に出題されます。</p>
+  body.innerHTML=`${instr?`<p class="muted" style="margin:0 0 8px;font-size:12px">追加指示: ${esc(instr)}</p>`:''}
+    <p class="muted" style="margin:2px 0 10px">内容を確認して保存してください。保存後は「手動クイズ」から編集・削除でき、クイズ・復習に出題されます。</p>
     ${preview}
-    <div class="modal-foot"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn" id="aiAgain">作り直す</button><button class="btn pri" id="aiSave">保存する</button></div>`;
-  body.querySelector('#aiAgain').onclick=()=>aiGenAndShow(term,type,bg);
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn" id="aiEdit">指示を変更</button><button class="btn" id="aiAgain">作り直す</button><button class="btn pri" id="aiSave">保存する</button></div>`;
+  body.querySelector('#aiEdit').onclick=()=>aiShowForm(term,type,bg,instr);
+  body.querySelector('#aiAgain').onclick=()=>aiGenAndShow(term,type,bg,instr);
   body.querySelector('#aiSave').onclick=()=>{
     const quiz=(q.type==='choice')
       ? {id:uid('q'),termId:term.id,type:'choice',q:q.q,choices:q.choices,answer:q.answerIndex,expl:q.expl,ai:true}

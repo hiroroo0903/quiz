@@ -909,6 +909,8 @@ function fmtDef(raw,kps){
 }
 function proseSeg(seg,kps){
   let s=esc(seg);
+  /* 原文に含まれる <sup>…</sup> / <sub>…</sub> のみ上付き・下付きとして復元（中身はエスケープ済みのまま） */
+  s=s.replace(/&lt;sup&gt;([\s\S]*?)&lt;\/sup&gt;/gi,'<sup>$1</sup>').replace(/&lt;sub&gt;([\s\S]*?)&lt;\/sub&gt;/gi,'<sub>$1</sub>');
   (kps||[]).slice().sort((a,b)=>b.length-a.length).forEach(kp=>{
     if(!kp)return;
     const e=esc(kp).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');

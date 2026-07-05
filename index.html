@@ -113,6 +113,8 @@ mark{background:var(--mark);color:var(--mark-ink);padding:0 2px;border-radius:3p
 .chip.acc{background:var(--accent-soft);color:var(--accent-ink)}
 .chip.ng{background:var(--ng-soft);color:var(--ng)}
 .chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.warn{background:rgba(201,162,39,.16);color:#B08900}
+[data-theme="dark"] .chip.warn{color:#E6C34A}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
 .muted{color:var(--ink2);font-size:13.5px}
 .sect-title{font-family:var(--serif);font-size:18px;font-weight:700;letter-spacing:.03em;margin:26px 0 12px;display:flex;align-items:center;gap:10px}
@@ -244,6 +246,16 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
 .expl-term b{font-size:15px}
 .written-ans{background:var(--ok-soft);border:1px solid var(--ok);border-radius:9px;padding:13px 16px;margin:14px 0;white-space:pre-wrap;overflow-wrap:anywhere}
 .selfgrade{display:flex;gap:10px;margin-top:14px}
+.rating-label{font-size:13px}
+.rating-btns{display:flex;gap:8px;flex-wrap:wrap}
+.rating-btns .rate{flex:1 1 0;min-width:96px;flex-direction:column;gap:1px;padding:11px 8px;font-size:20px;font-weight:700;line-height:1.1}
+.rating-btns .rate small{font-size:11px;font-weight:600;opacity:.85}
+.rate-o{color:var(--ok);border-color:var(--ok)}
+.rate-t{color:#C9A227;border-color:#C9A227}
+.rate-x{color:var(--ng);border-color:var(--ng)}
+.rate-o:hover{background:rgba(46,160,67,.12)}
+.rate-t:hover{background:rgba(201,162,39,.14)}
+.rate-x:hover{background:rgba(220,80,80,.12)}
 .q-foot{display:flex;justify-content:flex-end;margin-top:18px;gap:10px}
 .result-num{font-family:var(--serif);font-size:52px;font-weight:700;text-align:center;letter-spacing:.02em}
 .result-num small{font-size:20px;color:var(--ink2)}
@@ -924,7 +936,16 @@ function proseSeg(seg,kps){
 /* ==================== ストレージ ==================== */
 const LS={contents:'mlstudy.contents',quizzes:'mlstudy.quizzes',weak:'mlstudy.weak',stats:'mlstudy.stats',settings:'mlstudy.settings',pool:'mlstudy.pool',ui:'mlstudy.ui',notebooks:'mlstudy.notebooks'};
 function load(key,fallback){try{const v=localStorage.getItem(key);return v?JSON.parse(v):fallback;}catch(e){return fallback;}}
-function save(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){toast('保存に失敗しました（容量不足の可能性）',true);}}
+let _saveWarnAt=0;
+function save(key,val){
+  try{localStorage.setItem(key,JSON.stringify(val));return true;}
+  catch(e){
+    const quota=e&&(e.name==='QuotaExceededError'||e.code===22||e.code===1014||/quota|exceeded/i.test(e.message||''));
+    const now=Date.now();
+    if(now-_saveWarnAt>8000){_saveWarnAt=now;toast(quota?'端末の保存容量が上限に近づいています。設定＞データ管理でバックアップを取り、画像を減らすと安全です':'保存に失敗しました',true);}
+    return false;
+  }
+}
 
 let DB={contents:null,quizzes:null,weak:null,stats:null,settings:null,pool:null,ui:null,notebooks:null,activeId:null};
 function nbKey(base){return 'mlstudy.nb.'+DB.activeId+'.'+base;}
@@ -953,6 +974,7 @@ function loadActiveNotebook(){
   if(!DB.weak.terms)DB.weak.terms={};if(!DB.weak.quizzes)DB.weak.quizzes={};
   DB.stats=load(nbKey('stats'),{sessions:[],terms:{}});
   DB.pool=load(nbKey('pool'),{});
+  DB.grades=load(nbKey('grades'),{}); /* 手動クイズの理解度: quizId -> {g:'o'|'t'|'x', at, n} */
   DB.ui=load(nbKey('ui'),{scrollY:0,open:{},view:'learn'});
   if(!DB.ui.open)DB.ui.open={};
 }
@@ -970,6 +992,9 @@ const saveWeak=()=>save(nbKey('weak'),DB.weak);
 const saveStats=()=>save(nbKey('stats'),DB.stats);
 const saveSettings=()=>save(LS.settings,DB.settings);
 const savePool=()=>save(nbKey('pool'),DB.pool);
+const saveGrades=()=>save(nbKey('grades'),DB.grades);
+function setGrade(quizId,g){const cur=DB.grades[quizId]||{n:0};DB.grades[quizId]={g,at:todayStr(),n:(cur.n||0)+1};saveGrades();}
+function gradeRank(quizId){const gr=DB.grades[quizId];if(!gr||!gr.g)return 0;return gr.g==='x'?1:gr.g==='t'?2:3;} /* 未出題0 < ×1 < △2 < ○3 */
 const saveUI=()=>save(nbKey('ui'),DB.ui);
 const saveNotebooks=()=>save(LS.notebooks,{active:DB.activeId,list:DB.notebooks});
 let _uiTimer=null;
@@ -1321,8 +1346,9 @@ function removeTermData(termId){
   DB.quizzes=DB.quizzes.filter(q=>q.termId!==termId);
   delete DB.weak.terms[termId];
   qs.forEach(id=>delete DB.weak.quizzes[id]);
+  qs.forEach(id=>delete DB.grades[id]);
   delete DB.pool[termId];
-  saveQuizzes();saveWeak();savePool();
+  saveQuizzes();saveWeak();savePool();saveGrades();
 }
 function deleteTerm(termId){
   const t=getTerm(termId);
@@ -1418,9 +1444,10 @@ function openQuizManager(termId){
 function renderQuizManagerList(termId,bg){
   const list=(bg||document).querySelector('#mqList');
   const qs=quizzesOf(termId);
+  const gradeChip=q=>{const gr=DB.grades[q.id];if(!gr||!gr.g)return '　<span class="chip">未出題</span>';const m={o:['○ 完璧','ok'],t:['△ あいまい','warn'],x:['× 苦手','ng']}[gr.g];return m?`　<span class="chip ${m[1]}">${m[0]}</span>`:'';};
   list.innerHTML=qs.length?qs.map(q=>`<div class="mq-item">
       <div class="q">${esc(q.q)}</div>
-      <div class="meta">${q.type==='choice'?'4択　正解: '+esc(q.choices[q.answer]):'記述式（自己採点）'}${q.seed?'　<span class="chip">初期収録</span>':''}${q.ai?'　<span class="chip acc">AI生成</span>':''}</div>
+      <div class="meta">${q.type==='choice'?'4択　正解: '+esc(q.choices[q.answer]):'記述式（自己採点）'}${q.seed?'　<span class="chip">初期収録</span>':''}${q.ai?'　<span class="chip acc">AI生成</span>':''}${gradeChip(q)}</div>
       <div class="row" style="margin-top:7px"><button class="btn sm ghost" onclick="openQuizForm('${termId}','${q.id}')">編集</button><button class="btn sm ghost" style="color:var(--ng)" onclick="deleteQuiz('${termId}','${q.id}')">削除</button></div>
     </div>`).join(''):'<p class="muted">この用語の手動クイズはまだありません。自動生成では作れない角度の問題（比較・数値・理由など）を追加できます。</p>';
 }
@@ -1428,7 +1455,8 @@ function deleteQuiz(termId,quizId){
   if(!confirm('このクイズを削除しますか？'))return;
   DB.quizzes=DB.quizzes.filter(q=>q.id!==quizId);
   delete DB.weak.quizzes[quizId];
-  saveQuizzes();saveWeak();renderQuizManagerList(termId);renderLearn();renderReview();toast('クイズを削除しました');
+  delete DB.grades[quizId];
+  saveQuizzes();saveWeak();saveGrades();renderQuizManagerList(termId);renderLearn();renderReview();toast('クイズを削除しました');
 }
 
 /* ===== AIで問題を作成（用語カードごと） ===== */
@@ -1764,6 +1792,20 @@ function startQuiz(catIds,n,mode,deckOverride,useAI){
   const terms=DB.contents.terms.filter(t=>catIds.includes(t.cat));
   let deck=[];
   if(deckOverride){deck=deckOverride;}
+  else if(ai===false){
+    /* AI OFF: 手動クイズのみ。優先度=未出題>×>△>○（同順位は前回評価が古い順）で選ぶ */
+    const all=terms.flatMap(t=>quizzesOf(t.id));
+    if(!all.length){toast('このカテゴリには手動クイズがありません。AI生成をONにするか、手動クイズを追加してください',true);return;}
+    all.sort((a,b)=>{
+      const ra=gradeRank(a.id),rb=gradeRank(b.id);
+      if(ra!==rb)return ra-rb;
+      const ga=DB.grades[a.id],gb=DB.grades[b.id];
+      const da=(ga&&ga.at)||'',db=(gb&&gb.at)||'';
+      if(da!==db)return da<db?-1:1;
+      return Math.random()-0.5;
+    });
+    deck=all.slice(0,n).map(m=>manualToItem(m)); /* 未出題・苦手を前に、この順で出題 */
+  }
   else{
     if(!terms.length){toast('選択したカテゴリに用語がありません',true);return;}
     const order=[];
@@ -1864,7 +1906,7 @@ async function maybeGenerateForDeck(deck){
 /* ==================== 出題・解答 ==================== */
 function renderQuestion(){
   const stage=$('#quizStage'), item=QZ.deck[QZ.idx];
-  QZ.answered=false;
+  QZ.answered=false;QZ.graded=false;
   const srcChip=item.src==='pool'?'<span class="chip acc">AI生成</span>':item.src==='manual'?'<span class="chip">手動クイズ</span>':`<span class="chip">${FORMAT_LABEL[item.format]||''}</span>`;
   const isReview=QZ.mode==='review'?'<span class="chip ng">復習</span>':'';
   let body;
@@ -1888,16 +1930,32 @@ function renderQuestion(){
     </div>`;
   window.scrollTo({top:0});
 }
-function feedbackHTML(item,correct){
+function termBlockHTML(item){
   const term=getTerm(item.termId);
-  const termBlock=term?`<div class="expl-term"><b>${esc(term.name)}</b><div style="font-size:13.5px;margin-top:4px">${fmtDef(defSnippet(term),term.kps)}</div>
+  if(!term)return '';
+  return `<div class="expl-term"><b>${esc(term.name)}</b><div style="font-size:13.5px;margin-top:4px">${fmtDef(defSnippet(term),term.kps)}</div>
     ${term.formula?`<div class="formula" style="font-size:13px;margin-top:6px">${fmtMath(term.formula)}</div>`:''}
-    <a href="#learn" onclick="jumpToTerm('${term.id}',true);return false;" style="font-size:13px">→ 学習ページでこのカードを開く</a></div>`:'';
+    <a href="#learn" onclick="jumpToTerm('${term.id}',true);return false;" style="font-size:13px">→ 学習ページでこのカードを開く</a></div>`;
+}
+function ratingRow(){
+  return `<p class="muted rating-label" style="margin:14px 0 6px">理解度をつけて次へ（未出題・×・△が優先的に再出題されます）</p>
+    <div class="rating-btns">
+      <button class="btn rate rate-o" onclick="gradeAnswer('o')">○<small>完璧</small></button>
+      <button class="btn rate rate-t" onclick="gradeAnswer('t')">△<small>あいまい</small></button>
+      <button class="btn rate rate-x" onclick="gradeAnswer('x')">×<small>苦手</small></button>
+    </div>`;
+}
+function nextActionHTML(item){
+  if(item.quizId)return ratingRow(); /* 手動クイズは理解度で次へ */
+  const last=QZ.idx+1>=QZ.deck.length;
+  return `<div class="q-foot"><button class="btn pri" onclick="nextQ()">${last?'結果を見る':'次の問題へ'}</button></div>`;
+}
+function feedbackHTML(item,correct){
   return `<div class="judge ${correct?'ok':'ng'}">${correct
     ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>正解！'
     :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>不正解'}</div>
-    <div class="expl-box">${item.expl?fmtMath(item.expl):(correct?'この調子で進めましょう。':'下のカードで確認しておきましょう。')}${termBlock}</div>
-    <div class="q-foot"><button class="btn pri" onclick="nextQ()">${QZ.idx+1>=QZ.deck.length?'結果を見る':'次の問題へ'}</button></div>`;
+    <div class="expl-box">${item.expl?fmtMath(item.expl):(correct?'この調子で進めましょう。':'下のカードで確認しておきましょう。')}${termBlockHTML(item)}</div>
+    ${nextActionHTML(item)}`;
 }
 function answerChoice(i){
   if(QZ.answered)return;QZ.answered=true;
@@ -1912,26 +1970,21 @@ function answerChoice(i){
   $('#qFeedback').innerHTML=feedbackHTML(item,correct);
 }
 function revealWritten(){
-  if(QZ.answered)return;
-  const item=QZ.deck[QZ.idx];
-  const stage=$('#quizStage');
-  stage.querySelector('.q-foot').outerHTML=`
-    <div class="written-ans"><b>模範解答</b><br>${fmtMath(item.modelAnswer)}</div>
-    ${item.expl?`<div class="expl-box">${fmtMath(item.expl)}</div>`:''}
-    <p class="muted" style="margin:12px 0 0">自分の答えは合っていましたか？</p>
-    <div class="selfgrade">
-      <button class="btn" style="color:var(--ok);border-color:var(--ok)" onclick="selfGrade(true)">○ 正解した</button>
-      <button class="btn" style="color:var(--ng);border-color:var(--ng)" onclick="selfGrade(false)">✗ 間違えた</button>
-    </div>`;
-}
-function selfGrade(ok){
   if(QZ.answered)return;QZ.answered=true;
   const item=QZ.deck[QZ.idx];
-  recordAnswer(item,ok);
-  if(ok)QZ.correct++;
-  const div=document.createElement('div');div.innerHTML=feedbackHTML(item,ok);
-  $('.q-card').appendChild(div);
-  $('.selfgrade').querySelectorAll('button').forEach(b=>b.disabled=true);
+  const foot=$('#quizStage .q-foot');
+  const html=`<div class="written-ans"><b>模範解答</b><br>${fmtMath(item.modelAnswer)}</div>
+    ${item.expl?`<div class="expl-box">${fmtMath(item.expl)}</div>`:''}
+    ${termBlockHTML(item)}
+    ${nextActionHTML(item)}`;
+  if(foot)foot.outerHTML=html;else $('#qFeedback').innerHTML=html;
+}
+function gradeAnswer(g){
+  if(QZ.graded)return;QZ.graded=true;
+  const item=QZ.deck[QZ.idx];
+  if(item.type==='written'){const ok=g==='o';recordAnswer(item,ok);if(ok)QZ.correct++;} /* 記述はここで採点（○=正解） */
+  if(item.quizId)setGrade(item.quizId,g);
+  nextQ();
 }
 function nextQ(){
   QZ.idx++;
@@ -2383,16 +2436,21 @@ function openNotebookManager(){
 /* ===== 全ノート一括バックアップ / 復元 ===== */
 function buildFullBackup(){
   flushUI();
-  saveContents();saveQuizzes();saveWeak();saveStats();savePool(); /* 現在のノートの最新をstorageへ確定 */
   const data={};
   DB.notebooks.forEach(nb=>{
-    data[nb.id]={
-      contents:load(nbKeyOf(nb.id,'contents'),{version:1,categories:[],terms:[]}),
-      quizzes:load(nbKeyOf(nb.id,'quizzes'),[]),
-      weak:load(nbKeyOf(nb.id,'weak'),{terms:{},quizzes:{}}),
-      stats:load(nbKeyOf(nb.id,'stats'),{sessions:[],terms:{}}),
-      pool:load(nbKeyOf(nb.id,'pool'),{})
-    };
+    if(nb.id===DB.activeId){
+      /* 現在のノートはメモリ上の最新をそのまま使う（再保存しない＝容量上限に触れない） */
+      data[nb.id]={contents:DB.contents,quizzes:DB.quizzes,weak:DB.weak,stats:DB.stats,pool:DB.pool,grades:DB.grades};
+    }else{
+      data[nb.id]={
+        contents:load(nbKeyOf(nb.id,'contents'),{version:1,categories:[],terms:[]}),
+        quizzes:load(nbKeyOf(nb.id,'quizzes'),[]),
+        weak:load(nbKeyOf(nb.id,'weak'),{terms:{},quizzes:{}}),
+        stats:load(nbKeyOf(nb.id,'stats'),{sessions:[],terms:{}}),
+        pool:load(nbKeyOf(nb.id,'pool'),{}),
+        grades:load(nbKeyOf(nb.id,'grades'),{})
+      };
+    }
   });
   return {app:'mlstudy',kind:'full',version:1,exportedAt:new Date().toISOString(),
     notebooks:DB.notebooks.map(n=>({id:n.id,name:n.name,createdAt:n.createdAt||Date.now(),seed:!!n.seed})),
@@ -2410,6 +2468,7 @@ function importFull(d){
     save(nbKeyOf(meta.id,'weak'),nd.weak||{terms:{},quizzes:{}});
     save(nbKeyOf(meta.id,'stats'),nd.stats||{sessions:[],terms:{}});
     save(nbKeyOf(meta.id,'pool'),nd.pool||{});
+    save(nbKeyOf(meta.id,'grades'),nd.grades||{});
     if(exists){const nb=DB.notebooks.find(n=>n.id===meta.id);nb.name=meta.name;nb.seed=!!meta.seed;updated++;}
     else{DB.notebooks.push({id:meta.id,name:meta.name,createdAt:meta.createdAt||Date.now(),seed:!!meta.seed});added++;}
   });
@@ -2429,6 +2488,7 @@ function importSingleAsNew(d,file){
   save(nbKeyOf(id,'weak'),d.weak||{terms:{},quizzes:{}});
   save(nbKeyOf(id,'stats'),d.stats||{sessions:[],terms:{}});
   save(nbKeyOf(id,'pool'),d.pool||{});
+  save(nbKeyOf(id,'grades'),d.grades||{});
   if(d.settings)Object.assign(DB.settings,{theme:d.settings.theme||DB.settings.theme,model:d.settings.model||DB.settings.model,useGemini:d.settings.useGemini!==undefined?d.settings.useGemini:DB.settings.useGemini});
   saveSettings();applyTheme();switchNotebook(id);
   toast('「'+name+'」として取り込みました');

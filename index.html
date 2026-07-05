@@ -1773,7 +1773,7 @@ function startQuiz(catIds,n,mode,deckOverride,useAI){
       if(item)deck.push(item);
     }
   }
-  if(!deck.length){toast('出題できる問題がありません',true);return;}
+  if(!deck.length){toast(ai?'出題できる問題がありません':'このカテゴリには手動クイズがありません。AI生成をONにするか、手動クイズを追加してください',true);return;}
   if(!deckOverride&&deck.length<n)toast(`出題できる問題は${deck.length}問でした（この分だけ出題します）`);
   QZ={active:true,deck,idx:0,correct:0,answered:false,mode:mode||'normal',cats:catIds,lastCats:catIds,startedAt:Date.now()};
   $('#quizSetup').classList.add('hidden');
@@ -1782,8 +1782,13 @@ function startQuiz(catIds,n,mode,deckOverride,useAI){
   if(!deckOverride&&ai)maybeGenerateForDeck(deck);
 }
 function makeItemForTerm(term,usedKeys,preferFormat,useAI){
+  const manualOnly=useAI===false; /* AI OFF: 手動クイズ（保存済みの問題）だけを出題。テンプレ自動生成・AIプールは使わない */
   const allowPool=useAI!==false;
   const manuals=quizzesOf(term.id).filter(q=>!usedKeys.has('q:'+q.id));
+  if(manualOnly){
+    if(!manuals.length)return null;
+    const m=pick(manuals);usedKeys.add('q:'+m.id);return manualToItem(m);
+  }
   const poolQs=allowPool?(DB.pool[term.id]||[]).map((p,i)=>({p,key:'p:'+term.id+':'+i})).filter(x=>!usedKeys.has(x.key)):[];
   const stocked=[...manuals.map(m=>({kind:'manual',m})),...poolQs.map(x=>({kind:'pool',x}))];
   if(stocked.length&&Math.random()<0.75&&!preferFormat){
@@ -1791,14 +1796,11 @@ function makeItemForTerm(term,usedKeys,preferFormat,useAI){
     if(s.kind==='manual'){usedKeys.add('q:'+s.m.id);return manualToItem(s.m);}
     usedKeys.add(s.x.key);return poolToItem(term.id,s.x.p);
   }
-  const strict=useAI===false; /* AI OFF: 重複で水増しせず、ユニークな問題が尽きたら打ち切る */
-  const maxTries=strict?8:4;
-  for(let tries=0;tries<maxTries;tries++){
+  for(let tries=0;tries<4;tries++){
     const item=buildTemplateQuestion(term,preferFormat);
     if(item){
       const key='f:'+term.id+':'+item.format;
-      if(!usedKeys.has(key)){usedKeys.add(key);return item;}
-      if(!strict&&tries===maxTries-1){usedKeys.add(key);return item;}
+      if(!usedKeys.has(key)||tries===3){usedKeys.add(key);return item;}
     }
   }
   if(stocked.length){

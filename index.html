@@ -141,6 +141,7 @@ mark{background:var(--mark);color:var(--mark-ink);padding:0 2px;border-radius:3p
 .term-imgs{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 2px}
 .term-img{border:1px solid var(--line);border-radius:10px;overflow:hidden;padding:0;background:var(--surface2);cursor:zoom-in;display:block;line-height:0}
 .term-img img{display:block;width:auto;height:auto;max-width:min(100%,360px);max-height:320px;object-fit:contain}
+.term-img-loading{display:flex;align-items:center;justify-content:center;width:120px;height:90px;color:var(--ink3);font-size:12px;cursor:default}
 .thumb-row{display:flex;flex-wrap:wrap;gap:8px}
 .thumb{position:relative;width:96px;height:96px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface2)}
 .thumb img{width:100%;height:100%;object-fit:contain;display:block}
@@ -946,6 +947,89 @@ function save(key,val){
     return false;
   }
 }
+/* ==================== 画像ストレージ（IndexedDB） ====================
+   画像データ本体はIndexedDBに保存し、localStorage側の用語データには画像ID参照のみを持たせる。
+   これによりlocalStorage（数MB上限）を画像で圧迫しない。IndexedDB非対応環境では従来通り
+   dataURLをインライン保存（term.imgs に dataURL を直接格納）へフォールバックする。 */
+const IMG={}; /* メモリキャッシュ: 画像ID -> dataURL */
+const IDB={db:null,ok:false};
+try{IDB.ok=(typeof indexedDB!=='undefined'&&!!indexedDB);}catch(e){IDB.ok=false;}
+function isDataUrl(s){return typeof s==='string'&&s.slice(0,5)==='data:';}
+function resolveImg(ref){return isDataUrl(ref)?ref:(IMG[ref]||'');} /* 参照(ID or dataURL)を表示可能なsrcへ */
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    if(!IDB.ok)return rej(new Error('no-idb'));
+    if(IDB.db)return res(IDB.db);
+    let r;try{r=indexedDB.open('mlstudy-images',1);}catch(e){IDB.ok=false;return rej(e);}
+    r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains('images'))db.createObjectStore('images');};
+    r.onsuccess=()=>{IDB.db=r.result;res(IDB.db);};
+    r.onerror=()=>{IDB.ok=false;rej(r.error||new Error('idb-open'));};
+  });
+}
+function idbSet(id,data){return idbOpen().then(db=>new Promise((res,rej)=>{const tx=db.transaction('images','readwrite');tx.objectStore('images').put(data,id);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error||new Error('abort'));}));}
+function idbGet(id){return idbOpen().then(db=>new Promise((res,rej)=>{const tx=db.transaction('images','readonly');const rq=tx.objectStore('images').get(id);rq.onsuccess=()=>res(rq.result||null);rq.onerror=()=>rej(rq.error);}));}
+function idbDel(id){return idbOpen().then(db=>new Promise((res)=>{const tx=db.transaction('images','readwrite');tx.objectStore('images').delete(id);tx.oncomplete=()=>res();tx.onerror=()=>res();})).catch(()=>{});}
+function idbKeys(){return idbOpen().then(db=>new Promise((res,rej)=>{const tx=db.transaction('images','readonly');const rq=tx.objectStore('images').getAllKeys();rq.onsuccess=()=>res(rq.result||[]);rq.onerror=()=>rej(rq.error);}));}
+function imageRefsOf(contents){const ids=[];((contents&&contents.terms)||[]).forEach(t=>(t.imgs||[]).forEach(r=>{if(r&&!isDataUrl(r))ids.push(r);}));return ids;}
+async function loadImagesForActive(){
+  if(!IDB.ok)return;
+  for(const id of imageRefsOf(DB.contents)){if(id in IMG)continue;try{const d=await idbGet(id);if(d)IMG[id]=d;}catch(e){}}
+}
+async function migrateInlineImages(){ /* 旧inline(dataURL)をIDBへ移し、ID参照へ置換 */
+  if(!IDB.ok)return false;
+  let changed=false;
+  for(const t of (DB.contents.terms||[])){
+    if(!t.imgs||!t.imgs.length)continue;
+    const out=[];
+    for(const r of t.imgs){
+      if(isDataUrl(r)){const id=uid('img');try{await idbSet(id,r);IMG[id]=r;out.push(id);changed=true;}catch(e){out.push(r);}}
+      else out.push(r);
+    }
+    t.imgs=out;
+  }
+  if(changed)saveContents();
+  return changed;
+}
+async function afterNotebookLoad(){ /* ノート読込後：移行→キャッシュ→再描画 */
+  if(!IDB.ok)return;
+  try{await migrateInlineImages();await loadImagesForActive();renderLearn();}catch(e){}
+}
+async function normalizeImportedContents(contents){ /* インポート内容のinline画像をIDBへ */
+  if(!IDB.ok||!contents||!contents.terms)return contents;
+  for(const t of contents.terms){
+    if(!t.imgs||!t.imgs.length)continue;
+    const out=[];
+    for(const r of t.imgs){if(isDataUrl(r)){const id=uid('img');try{await idbSet(id,r);IMG[id]=r;out.push(id);}catch(e){out.push(r);}}else out.push(r);}
+    t.imgs=out;
+  }
+  return contents;
+}
+async function inlineImages(contents){ /* エクスポート用：ID参照をdataURLへ展開（自己完結バックアップ） */
+  if(!contents||!contents.terms)return contents;
+  const c=JSON.parse(JSON.stringify(contents));
+  for(const t of c.terms){
+    if(!t.imgs||!t.imgs.length)continue;
+    const out=[];
+    for(const r of t.imgs){
+      if(isDataUrl(r))out.push(r);
+      else{let d=IMG[r];if(!d&&IDB.ok){try{d=await idbGet(r);}catch(e){}}if(d)out.push(d);}
+    }
+    t.imgs=out;
+  }
+  return c;
+}
+async function deleteImages(refs){ /* 参照配列のうちID参照をIDBから削除 */
+  for(const r of (refs||[])){if(r&&!isDataUrl(r)){delete IMG[r];if(IDB.ok)await idbDel(r);}}
+}
+async function gcImages(){ /* どのノートからも参照されないIDB画像を掃除 */
+  if(!IDB.ok)return;
+  try{
+    const referenced=new Set();
+    DB.notebooks.forEach(nb=>{const c=nb.id===DB.activeId?DB.contents:load(nbKeyOf(nb.id,'contents'),null);imageRefsOf(c).forEach(id=>referenced.add(id));});
+    const keys=await idbKeys();
+    for(const k of keys){if(!referenced.has(k))await idbDel(k);}
+  }catch(e){}
+}
 
 let DB={contents:null,quizzes:null,weak:null,stats:null,settings:null,pool:null,ui:null,notebooks:null,activeId:null};
 function nbKey(base){return 'mlstudy.nb.'+DB.activeId+'.'+base;}
@@ -1146,7 +1230,7 @@ function renderTermCard(t){
   const nq=quizzesOf(t.id).length;
   const fig=t.fig?`<div class="fig-box">${figureFor(t.fig)}</div>`:'';
   const imgs=t.imgs||[];
-  const gallery=imgs.length?`<div class="term-imgs">${imgs.map((src,i)=>`<button class="term-img" onclick="openImageViewer('${t.id}',${i})"><img src="${src}" loading="lazy" alt="添付画像 ${i+1}"></button>`).join('')}</div>`:'';
+  const gallery=imgs.length?`<div class="term-imgs">${imgs.map((src,i)=>{const u=resolveImg(src);return u?`<button class="term-img" onclick="openImageViewer('${t.id}',${i})"><img src="${u}" loading="lazy" alt="添付画像 ${i+1}"></button>`:`<div class="term-img term-img-loading">読み込み中…</div>`;}).join('')}</div>`:'';
   return `<details class="term" ${isOpen(t.id)?'open':''} id="term-${t.id}" data-term="${t.id}">
     <summary>${TCARET}<span class="term-name">${esc(t.name)}</span>${nq?`<span class="term-sub">✎ 手動クイズ ${nq}</span>`:''}</summary>
     <div class="term-body">
@@ -1341,6 +1425,8 @@ function mergeCategories(sourceId,targetId){
   toast(`「${src.name}」を「${tgt.name}」に統合しました（用語${moved.length}件を移動）`);
 }
 function removeTermData(termId){
+  const term=getTerm(termId);
+  if(term&&term.imgs&&term.imgs.length)deleteImages(term.imgs.slice());
   DB.contents.terms=DB.contents.terms.filter(t=>t.id!==termId);
   const qs=DB.quizzes.filter(q=>q.termId===termId).map(q=>q.id);
   DB.quizzes=DB.quizzes.filter(q=>q.termId!==termId);
@@ -1380,16 +1466,22 @@ function compressImage(file,maxDim,quality){
 }
 function renderFormImgs(bg,imgs){
   const wrap=bg.querySelector('#fImgs');if(!wrap)return;
-  wrap.innerHTML=imgs.length?imgs.map((src,i)=>`<div class="thumb"><img src="${src}" alt=""><button type="button" class="thumb-x" data-i="${i}" aria-label="削除">×</button></div>`).join(''):'<span class="muted" style="font-size:13px">画像は未添付です</span>';
+  wrap.innerHTML=imgs.length?imgs.map((it,i)=>`<div class="thumb"><img src="${it.data||''}" alt=""><button type="button" class="thumb-x" data-i="${i}" aria-label="削除">×</button></div>`).join(''):'<span class="muted" style="font-size:13px">画像は未添付です</span>';
   wrap.querySelectorAll('.thumb-x').forEach(b=>b.onclick=()=>{imgs.splice(+b.dataset.i,1);renderFormImgs(bg,imgs);});
 }
 function openImageViewer(termId,i){
   const t=getTerm(termId);if(!t||!t.imgs||!t.imgs[i])return;
   const imgs=t.imgs;let idx=i;
-  const bg=openModal(`<div class="imgview"><img id="ivImg" src="${imgs[idx]}" alt=""></div>
+  const bg=openModal(`<div class="imgview"><img id="ivImg" src="${resolveImg(imgs[idx])}" alt=""></div>
     ${imgs.length>1?`<div class="imgview-nav"><button class="btn sm" id="ivPrev">‹ 前</button><span class="muted" id="ivCount"></span><button class="btn sm" id="ivNext">次 ›</button></div>`:''}
     <div class="modal-foot"><button class="btn" onclick="closeModal()">閉じる</button></div>`,true);
-  const upd=()=>{bg.querySelector('#ivImg').src=imgs[idx];const c=bg.querySelector('#ivCount');if(c)c.textContent=(idx+1)+' / '+imgs.length;};
+  const upd=()=>{
+    const el=bg.querySelector('#ivImg');if(!el)return;
+    const ref=imgs[idx];let src=resolveImg(ref);
+    el.src=src;
+    if(!src&&IDB.ok){idbGet(ref).then(d=>{if(d){IMG[ref]=d;const e2=bg.querySelector('#ivImg');if(e2)e2.src=d;}}).catch(()=>{});}
+    const c=bg.querySelector('#ivCount');if(c)c.textContent=(idx+1)+' / '+imgs.length;
+  };
   if(imgs.length>1){bg.querySelector('#ivPrev').onclick=()=>{idx=(idx-1+imgs.length)%imgs.length;upd();};bg.querySelector('#ivNext').onclick=()=>{idx=(idx+1)%imgs.length;upd();};}
   upd();
 }
@@ -1411,23 +1503,36 @@ function openTermForm(termId,defaultCat){
     </div>
     <div class="field"><label>キーポイント（カンマ区切り・任意）</label><input id="fKps" value="${t?esc(t.kps.join('、')):''}" placeholder="例: バリアンス、過学習"><div class="hint">定義文・補足の中に登場する重要フレーズを登録すると、その箇所が穴埋め問題になります。</div></div>
     <div class="modal-foot"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" id="fSave">保存</button></div>`);
-  const formImgs=(t&&Array.isArray(t.imgs))?t.imgs.slice():[];
+  const formImgs=(t&&Array.isArray(t.imgs))?t.imgs.map(r=>({id:isDataUrl(r)?uid('img'):r,data:resolveImg(r),_new:isDataUrl(r)})):[];
   renderFormImgs(bg,formImgs);
+  if(IDB.ok&&formImgs.some(f=>!f.data)){ /* キャッシュ未読込の画像を取得して再描画 */
+    (async()=>{for(const f of formImgs){if(!f.data){try{const d=await idbGet(f.id);if(d){f.data=d;IMG[f.id]=d;}}catch(e){}}}renderFormImgs(bg,formImgs);})();
+  }
   bg.querySelector('#fImgAdd').onclick=()=>bg.querySelector('#fImgFile').click();
   bg.querySelector('#fImgFile').onchange=async e=>{
     const files=[...e.target.files];e.target.value='';
     for(const file of files){
       if(!file.type||!file.type.startsWith('image/')){toast('画像ファイルを選んでください',true);continue;}
       if(formImgs.length>=8){toast('画像は1カードあたり8枚までです',true);break;}
-      try{const d=await compressImage(file,1500,0.85);formImgs.push(d);renderFormImgs(bg,formImgs);}
+      try{const d=await compressImage(file,1500,0.85);formImgs.push({id:uid('img'),data:d,_new:true});renderFormImgs(bg,formImgs);}
       catch(err){toast('画像の読み込みに失敗しました',true);}
     }
   };
-  bg.querySelector('#fSave').onclick=()=>{
+  bg.querySelector('#fSave').onclick=async ()=>{
     const name=bg.querySelector('#fName').value.trim(), def=bg.querySelector('#fDef').value.trim();
     if(!name||!def){toast('用語名と定義は必須です',true);return;}
     const kps=bg.querySelector('#fKps').value.split(/[,、，]/).map(s=>s.trim()).filter(Boolean);
-    const data={cat:bg.querySelector('#fCat').value,name,def,formula:bg.querySelector('#fFormula').value.trim(),py:bg.querySelector('#fPy').value.trim(),note:bg.querySelector('#fNote').value.trim(),kps,imgs:formImgs};
+    const oldRefs=t?(t.imgs||[]).slice():[];
+    let imgsField;
+    if(IDB.ok){
+      for(const f of formImgs){if(f._new){try{await idbSet(f.id,f.data);IMG[f.id]=f.data;}catch(e){}}}
+      imgsField=formImgs.map(f=>f.id);
+      const keep=new Set(imgsField);
+      for(const r of oldRefs){if(r&&!isDataUrl(r)&&!keep.has(r)){delete IMG[r];idbDel(r);}}
+    }else{
+      imgsField=formImgs.map(f=>f.data); /* 非対応環境はdataURLをインライン保存 */
+    }
+    const data={cat:bg.querySelector('#fCat').value,name,def,formula:bg.querySelector('#fFormula').value.trim(),py:bg.querySelector('#fPy').value.trim(),note:bg.querySelector('#fNote').value.trim(),kps,imgs:imgsField};
     if(t){Object.assign(t,data);delete DB.pool[t.id];savePool();}
     else DB.contents.terms.push(Object.assign({id:uid('t'),fig:null,order:DB.contents.terms.length},data));
     saveContents();closeModal();renderLearn();renderReview();toast(t?'用語を更新しました（AI生成問題は再生成されます）':'用語を追加しました');
@@ -2212,8 +2317,10 @@ function bindSettings(){
     }
     updateGeminiStatusLine();
   });
-  $('#btnExport').addEventListener('click',()=>{
-    const json=JSON.stringify(buildFullBackup(),null,1);
+  $('#btnExport').addEventListener('click',async ()=>{
+    let json;
+    try{json=JSON.stringify(await buildFullBackup(),null,1);}
+    catch(e){toast('エクスポートの準備に失敗しました',true);return;}
     const fname='mlstudy-backup-'+todayStr()+'.json';
     try{
       const blob=new Blob([json],{type:'application/json'});
@@ -2229,14 +2336,14 @@ function bindSettings(){
   $('#importFile').addEventListener('change',e=>{
     const file=e.target.files[0];if(!file)return;
     const r=new FileReader();
-    r.onload=()=>{
+    r.onload=async ()=>{
       try{
         const d=JSON.parse(r.result);
         if(d.app!=='mlstudy')throw new Error('形式が違います');
-        if(d.kind==='full'&&d.notebooks){importFull(d);} /* 全ノート一括バックアップ */
-        else if(d.contents&&Array.isArray(d.contents.terms)){importSingleAsNew(d,file);} /* 旧・単一ノート形式は新規ノートとして取り込み */
+        if(d.kind==='full'&&d.notebooks){await importFull(d);} /* 全ノート一括バックアップ */
+        else if(d.contents&&Array.isArray(d.contents.terms)){await importSingleAsNew(d,file);} /* 旧・単一ノート形式は新規ノートとして取り込み */
         else throw new Error('形式が違います');
-      }catch(err){toast('インポートに失敗: '+err.message,true);}
+      }catch(err){toast('インポートに失敗: '+(err.message||err),true);}
       e.target.value='';
     };
     r.readAsText(file);
@@ -2339,6 +2446,7 @@ function switchNotebook(id){
   renderAll();
   const v=['learn','quiz','review','settings'].includes(DB.ui.view)?DB.ui.view:'learn';
   switchView(v);
+  afterNotebookLoad();
   toast('「'+activeNotebook().name+'」に切り替えました');
 }
 function createNotebook(name){
@@ -2353,7 +2461,8 @@ function deleteNotebook(id){
   if(DB.notebooks.length<=1){toast('最後のノートは削除できません',true);return;}
   const nb=DB.notebooks.find(n=>n.id===id);if(!nb)return;
   if(!confirm('ノート「'+nb.name+'」を削除しますか？\nこのノートの用語・クイズ・弱点・統計がすべて削除されます。元に戻せません。'))return;
-  ['contents','quizzes','weak','stats','pool','ui'].forEach(b=>{try{localStorage.removeItem(nbKeyOf(id,b));}catch(e){}});
+  if(IDB.ok){const c=id===DB.activeId?DB.contents:load(nbKeyOf(id,'contents'),null);deleteImages(imageRefsOf(c));}
+  ['contents','quizzes','weak','stats','pool','ui','grades'].forEach(b=>{try{localStorage.removeItem(nbKeyOf(id,b));}catch(e){}});
   DB.notebooks=DB.notebooks.filter(n=>n.id!==id);
   if(DB.activeId===id){
     DB.activeId=DB.notebooks[0].id;saveNotebooks();loadActiveNotebook();learnRestored=false;QZ={active:false};
@@ -2434,15 +2543,16 @@ function openNotebookManager(){
 }
 
 /* ===== 全ノート一括バックアップ / 復元 ===== */
-function buildFullBackup(){
+async function buildFullBackup(){
   flushUI();
+  if(IDB.ok){try{await loadImagesForActive();}catch(e){}}
   const data={};
-  DB.notebooks.forEach(nb=>{
+  for(const nb of DB.notebooks){
+    let raw;
     if(nb.id===DB.activeId){
-      /* 現在のノートはメモリ上の最新をそのまま使う（再保存しない＝容量上限に触れない） */
-      data[nb.id]={contents:DB.contents,quizzes:DB.quizzes,weak:DB.weak,stats:DB.stats,pool:DB.pool,grades:DB.grades};
+      raw={contents:DB.contents,quizzes:DB.quizzes,weak:DB.weak,stats:DB.stats,pool:DB.pool,grades:DB.grades};
     }else{
-      data[nb.id]={
+      raw={
         contents:load(nbKeyOf(nb.id,'contents'),{version:1,categories:[],terms:[]}),
         quizzes:load(nbKeyOf(nb.id,'quizzes'),[]),
         weak:load(nbKeyOf(nb.id,'weak'),{terms:{},quizzes:{}}),
@@ -2451,19 +2561,22 @@ function buildFullBackup(){
         grades:load(nbKeyOf(nb.id,'grades'),{})
       };
     }
-  });
+    const contents=await inlineImages(raw.contents); /* 画像をdataURLで埋め込み自己完結に */
+    data[nb.id]={contents,quizzes:raw.quizzes,weak:raw.weak,stats:raw.stats,pool:raw.pool,grades:raw.grades};
+  }
   return {app:'mlstudy',kind:'full',version:1,exportedAt:new Date().toISOString(),
     notebooks:DB.notebooks.map(n=>({id:n.id,name:n.name,createdAt:n.createdAt||Date.now(),seed:!!n.seed})),
     data,settings:{theme:DB.settings.theme,model:DB.settings.model,useGemini:DB.settings.useGemini}};
 }
-function importFull(d){
+async function importFull(d){
   const list=d.notebooks||[];
   if(!list.length)throw new Error('ノートが含まれていません');
   let added=0,updated=0;
-  list.forEach(meta=>{
+  for(const meta of list){
     const nd=(d.data||{})[meta.id]||{};
     const exists=DB.notebooks.some(n=>n.id===meta.id);
-    save(nbKeyOf(meta.id,'contents'),nd.contents||{version:1,categories:[],terms:[]});
+    const contents=await normalizeImportedContents(nd.contents||{version:1,categories:[],terms:[]});
+    save(nbKeyOf(meta.id,'contents'),contents);
     save(nbKeyOf(meta.id,'quizzes'),nd.quizzes||[]);
     save(nbKeyOf(meta.id,'weak'),nd.weak||{terms:{},quizzes:{}});
     save(nbKeyOf(meta.id,'stats'),nd.stats||{sessions:[],terms:{}});
@@ -2471,19 +2584,21 @@ function importFull(d){
     save(nbKeyOf(meta.id,'grades'),nd.grades||{});
     if(exists){const nb=DB.notebooks.find(n=>n.id===meta.id);nb.name=meta.name;nb.seed=!!meta.seed;updated++;}
     else{DB.notebooks.push({id:meta.id,name:meta.name,createdAt:meta.createdAt||Date.now(),seed:!!meta.seed});added++;}
-  });
+  }
   if(d.settings)Object.assign(DB.settings,{theme:d.settings.theme||DB.settings.theme,model:d.settings.model||DB.settings.model,useGemini:d.settings.useGemini!==undefined?d.settings.useGemini:DB.settings.useGemini});
   if(!DB.notebooks.some(n=>n.id===DB.activeId))DB.activeId=DB.notebooks[0].id;
   saveNotebooks();saveSettings();applyTheme();
   loadActiveNotebook();learnRestored=false;QZ={active:false};updateNotebookLabel();renderAll();
   const v=['learn','quiz','review','settings'].includes(DB.ui.view)?DB.ui.view:'learn';switchView(v);
+  afterNotebookLoad();gcImages();
   toast('一括復元しました（新規'+added+'冊・更新'+updated+'冊）');
 }
-function importSingleAsNew(d,file){
+async function importSingleAsNew(d,file){
   const base=(d.notebook||(file&&file.name.replace(/\.json$/i,''))||'インポートしたノート').slice(0,40);
   let name=base,k=2;while(DB.notebooks.some(n=>n.name===name)){name=base+' ('+(k++)+')';}
   const id=createNotebook(name);
-  save(nbKeyOf(id,'contents'),d.contents);
+  const contents=await normalizeImportedContents(d.contents);
+  save(nbKeyOf(id,'contents'),contents);
   save(nbKeyOf(id,'quizzes'),d.quizzes||[]);
   save(nbKeyOf(id,'weak'),d.weak||{terms:{},quizzes:{}});
   save(nbKeyOf(id,'stats'),d.stats||{sessions:[],terms:{}});
@@ -2548,6 +2663,7 @@ function boot(){
   switchView(start);
   updateHeaderHeight();
   window.addEventListener('resize',updateHeaderHeight);
+  afterNotebookLoad().then(gcImages); /* 画像をIDBへ移行・キャッシュし、未参照画像を掃除 */
 }
 window.addEventListener('hashchange',()=>{
   const hp=parseHash();

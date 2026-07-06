@@ -45,13 +45,17 @@ mark{background:var(--mark);color:var(--mark-ink);padding:0 2px;border-radius:3p
 /* ============ app shell ============ */
 .topbar{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
 .topbar-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:18px 16px 10px}
-.topbar-sub{display:none;flex-direction:column;gap:9px;max-width:1180px;margin:0 auto;padding:0 16px 14px}
+.topbar-sub{display:none;flex-direction:column;gap:8px;max-width:1180px;margin:0 auto;padding:0 16px 12px}
 .topbar-sub.on{display:flex}
 .ts-search{display:flex;align-items:stretch;gap:8px}
-.ts-search .toc-toggle{flex-shrink:0;padding:0 13px}
+.ts-search .toc-toggle{flex-shrink:0;padding:0 13px;border-radius:10px}
 .ts-search .searchbox{flex:1;min-width:0}
-.ts-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ts-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .ts-actions>*{flex-shrink:0}
+.ts-actions .ts-spacer{flex:1 1 0;min-width:0}
+.ts-actions .btn.sm{height:34px;padding:0 12px;border-radius:9px;gap:5px;font-size:13px;color:var(--ink2)}
+.ts-actions .btn.sm svg{width:15px;height:15px}
+.ts-actions .btn.sm:hover{color:var(--ink);background:var(--surface2)}
 .brand{flex:1;min-width:0;font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.04em;display:flex;flex-direction:column;align-items:stretch;line-height:1.15}
 .brand small{font-family:var(--sans);font-size:11px;color:var(--ink2);font-weight:400;display:block;letter-spacing:.12em;margin-top:-2px}
 .nb-switch{width:100%;display:flex;flex-direction:column;align-items:stretch;gap:2px;background:var(--accent-soft);border:1px solid var(--accent-line);padding:9px 15px 10px 15px;border-radius:12px;cursor:pointer}
@@ -136,7 +140,7 @@ mark{background:var(--mark);color:var(--mark-ink);padding:0 2px;border-radius:3p
 .toc-terms{margin:0;padding:0 0 4px 14px;list-style:none}
 .toc-terms a{display:block;padding:2px 8px;border-radius:6px;color:var(--ink2);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .toc-terms a:hover{background:var(--surface2);color:var(--ink);text-decoration:none}
-.lt-group{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;flex-shrink:0}
+.lt-group{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;flex-shrink:0;height:34px}
 .merge-list{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow-y:auto;margin-bottom:4px}
 .term-imgs{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 2px}
 .term-img{border:1px solid var(--line);border-radius:10px;overflow:hidden;padding:0;background:var(--surface2);cursor:zoom-in;display:block;line-height:0}
@@ -155,8 +159,8 @@ mark{background:var(--mark);color:var(--mark-ink);padding:0 2px;border-radius:3p
 .merge-opt input{accent-color:var(--accent);width:18px;height:18px;flex-shrink:0}
 .merge-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
 .merge-cnt{flex-shrink:0}
-.lt-group button{border:none;background:var(--surface);color:var(--ink2);padding:9px 14px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center}
-.lt-group button svg{width:17px;height:17px;display:block}
+.lt-group button{border:none;background:var(--surface);color:var(--ink2);padding:0 13px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center}
+.lt-group button svg{width:16px;height:16px;display:block}
 .lt-group button:hover{background:var(--surface2);color:var(--ink)}
 .lt-group button+button{border-left:1px solid var(--line2)}
 .searchbox{position:relative;flex:1;min-width:0}
@@ -175,7 +179,7 @@ details.cat>summary:hover{background:var(--surface2)}
 .cat-flag.on{color:#E0483D}
 #btnFlagFilter.on{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent-ink)}
 .toc-flag{font-size:12px}
-.term .term-flagbtn{margin-left:auto}
+.term .term-flagbtn{margin-left:2px;align-self:center}
 .today-review:empty{display:none}
 .today-review{margin:0 0 18px}
 .tr-inner{border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:12px;padding:14px 16px}
@@ -193,6 +197,11 @@ details.cat>summary:hover{background:var(--surface2)}
 .ms-seg{height:100%}
 .ms-seg.o{background:var(--ok)}.ms-seg.t{background:#C9A227}.ms-seg.x{background:var(--ng)}.ms-seg.un{background:var(--line2)}
 .ms-meta{font-size:12px;color:var(--ink2)}
+.ai-edit{width:100%;box-sizing:border-box;font-size:16px;line-height:1.6}
+.ai-choices{display:flex;flex-direction:column;gap:8px}
+.ai-choice{display:flex;align-items:flex-start;gap:10px}
+.ai-choice input[type=radio]{margin-top:13px;width:18px;height:18px;accent-color:var(--accent);flex-shrink:0}
+.ai-choice textarea{flex:1;min-width:0}
 .caret{width:16px;height:16px;color:var(--ink2);transition:transform .2s;flex-shrink:0}
 details[open]>summary .caret{transform:rotate(90deg)}
 .cat-body{border-top:1px solid var(--line);padding:8px 18px 16px}
@@ -200,11 +209,11 @@ details[open]>summary .caret{transform:rotate(90deg)}
 .cat-actions .btn.sm{padding:7px 11px}
 details.term{border-bottom:1px dashed var(--line);scroll-margin-top:calc(var(--header-h,120px) + 14px)}
 details.term:last-of-type{border-bottom:none}
-details.term>summary{list-style:none;display:flex;align-items:baseline;gap:10px;padding:11px 4px;cursor:pointer;user-select:none}
+details.term>summary{list-style:none;display:flex;align-items:baseline;gap:9px;padding:11px 4px;cursor:pointer;user-select:none}
 details.term>summary::-webkit-details-marker{display:none}
 details.term>summary:hover .term-name{color:var(--accent-ink)}
-.term-name{font-size:16.5px;font-weight:700;letter-spacing:.02em}
-.term-sub{font-size:12px;color:var(--ink2)}
+.term-name{font-size:16.5px;font-weight:700;letter-spacing:.02em;flex:1 1 auto;min-width:0}
+.term-sub{font-size:12px;color:var(--ink2);white-space:nowrap;flex-shrink:0;align-self:center}
 .tcaret{width:13px;height:13px;color:var(--line2);transition:transform .2s;flex-shrink:0;align-self:center}
 details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
 .term-body{padding:2px 4px 16px 23px}
@@ -219,7 +228,10 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
 .note-box{background:var(--warn-soft);border-left:3px solid var(--warn);border-radius:0 8px 8px 0;padding:8px 14px;margin:8px 0;font-size:14.5px;white-space:pre-wrap}
 .fig-box{margin:12px 0 4px;text-align:center}
 .fig-box svg{max-width:100%;height:auto}
-.term-foot{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.term-foot{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;align-items:center}
+.term-foot .btn.sm{height:32px;padding:0 11px;border-radius:8px;font-size:12.5px;gap:4px}
+.term-foot .btn.sm svg{width:14px;height:14px}
+.term-foot .foot-del{margin-left:auto}
 .btn.ghost.ai{color:var(--accent-ink);background:var(--accent-soft)}
 .btn.ghost.ai:hover{background:var(--accent-line)}
 .flash{animation:flashbg 1.8s ease-out}
@@ -369,9 +381,10 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
         <button id="btnExpandAll" aria-label="すべて開く" title="すべて開く"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 13l6 6 6-6"/><path d="M6 5l6 6 6-6"/></svg></button>
         <button id="btnCollapseAll" aria-label="すべて閉じる" title="すべて閉じる"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 11l6-6 6 6"/><path d="M6 19l6-6 6 6"/></svg></button>
       </div>
-      <button class="btn sm" id="btnFlagFilter" aria-label="フラグで絞り込み"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 21V4M4 4h11l-1.5 4L16 12H4"/></svg><span class="ff-label">フラグ</span></button>
-      <button class="btn sm" id="btnAddCat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>カテゴリ追加</button>
-      <button class="btn sm pri" id="btnBulkImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>一括追加</button>
+      <button class="btn sm" id="btnFlagFilter" aria-label="フラグで絞り込み" title="フラグで絞り込み"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 21V4M4 4h11l-1.5 4L16 12H4"/></svg><span class="ff-label">フラグ</span></button>
+      <span class="ts-spacer"></span>
+      <button class="btn sm" id="btnAddCat" title="カテゴリを追加"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>カテゴリ</button>
+      <button class="btn sm" id="btnBulkImport" title="テキストから一括追加"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>一括</button>
     </div>
   </div>
 </header>
@@ -390,8 +403,17 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
 <!-- ============ クイズビュー ============ -->
 <main id="view-quiz" class="view">
   <div id="quizSetup" class="quiz-setup">
-    <div id="todayReview" class="today-review"></div>
-    <h2 class="sect-title">クイズ設定</h2>
+    <h2 class="sect-title">問題数</h2>
+    <div class="countseg" id="qCountSeg">
+      <button data-n="5">5問</button><button data-n="10" class="on">10問</button><button data-n="20">20問</button><button data-n="30">30問</button><button data-n="40">40問</button><button data-n="50">50問</button>
+    </div>
+    <label class="ai-switch" id="qAiSwitch"><input type="checkbox" id="qUseAI"><span id="qAiLabel">AIで問題を生成する</span></label>
+    <label class="ai-switch" id="qFlagSwitch"><input type="checkbox" id="qFlagOnly"><span>🚩 フラグを付けた範囲のみ出題する</span></label>
+    <div style="margin:18px 0 4px" class="row">
+      <button class="btn pri" id="btnStartQuiz" style="font-size:16px;padding:11px 28px">クイズを開始</button>
+      <span class="gemini-status" id="geminiStatusLine"><span class="dot" id="geminiDot"></span><span id="geminiStatusText"></span></span>
+    </div>
+    <h2 class="sect-title" style="margin-top:22px">クイズ設定</h2>
     <p class="muted" style="margin:0 0 6px">出題するカテゴリを選んでください（複数選択可）。</p>
     <div class="row" style="margin-bottom:4px">
       <button class="btn sm" id="btnCatAll">すべて選択</button>
@@ -399,22 +421,13 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
       <span class="muted" id="catSelCount"></span>
     </div>
     <div class="catgrid" id="quizCatGrid"></div>
-    <h2 class="sect-title">問題数</h2>
-    <div class="countseg" id="qCountSeg">
-      <button data-n="5">5問</button><button data-n="10" class="on">10問</button><button data-n="20">20問</button><button data-n="30">30問</button><button data-n="40">40問</button><button data-n="50">50問</button>
-    </div>
-    <label class="ai-switch" id="qAiSwitch"><input type="checkbox" id="qUseAI"><span id="qAiLabel">AIで問題を生成する</span></label>
-    <label class="ai-switch" id="qFlagSwitch"><input type="checkbox" id="qFlagOnly"><span>🚩 フラグを付けた範囲のみ出題する</span></label>
-    <div style="margin-top:20px" class="row">
-      <button class="btn pri" id="btnStartQuiz" style="font-size:16px;padding:11px 28px">クイズを開始</button>
-      <span class="gemini-status" id="geminiStatusLine"><span class="dot" id="geminiDot"></span><span id="geminiStatusText"></span></span>
-    </div>
   </div>
   <div id="quizStage" class="quiz-stage hidden"></div>
 </main>
 
 <!-- ============ 復習ビュー ============ -->
 <main id="view-review" class="view">
+  <div id="todayReview" class="today-review"></div>
   <div class="dash">
     <div class="card dash-weaknum">
       <div>
@@ -422,15 +435,13 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
         <div class="weaknum" id="weakNum">0</div>
       </div>
       <div style="flex:1">
-        <p class="muted" id="weakSummaryText" style="margin:0"></p>
-        <div class="row" style="margin-top:10px">
+        <div class="row" style="margin-top:2px">
           <button class="btn pri" id="btnStartReview">復習クイズを開始</button>
           <div class="countseg" id="rCountSeg"><button data-n="5">5問</button><button data-n="10" class="on">10問</button><button data-n="20">20問</button><button data-n="30">30問</button><button data-n="40">40問</button><button data-n="50">50問</button></div>
         </div>
       </div>
     </div>
     <div class="card"><h3>日別の演習量と正答率（直近30日）</h3><div id="dashDaily"></div></div>
-    <div class="card"><h3>カテゴリ別正答率</h3><div id="dashCats"></div></div>
     <div class="card"><h3>章別の定着度（手動クイズの理解度）</h3><div id="dashMastery"></div></div>
   </div>
   <h2 class="sect-title">弱点リスト（優先度順）</h2>
@@ -1092,7 +1103,7 @@ function loadActiveNotebook(){
   if(!DB.ui.open)DB.ui.open={};
 }
 function initDB(){
-  DB.settings=Object.assign({theme:'auto',apiKey:'',model:'gemini-2.5-flash',useGemini:true,quizAI:true},load(LS.settings,{}));
+  DB.settings=Object.assign({theme:'auto',apiKey:'',model:'gemini-2.5-flash',useGemini:true,quizAI:false},load(LS.settings,{}));
   let reg=load(LS.notebooks,null);
   if(!reg||!reg.list||!reg.list.length){reg=migrateOrCreateNotebooks();save(LS.notebooks,reg);}
   DB.notebooks=reg.list;DB.activeId=reg.active;
@@ -1320,6 +1331,7 @@ function renderLearn(){
             <button class="btn sm ghost" onclick="openTermForm(null,'${c.id}')">＋用語追加</button>
             <button class="btn sm ghost" onclick="openCatForm('${c.id}')">分類名編集</button>
             ${allCats.length>1?`<button class="btn sm ghost" onclick="openCatMerge('${c.id}')">分類統合</button>`:''}
+            ${ts.length>1?`<button class="btn sm ghost" onclick="openCatSplit('${c.id}')">分類分解</button>`:''}
             <button class="btn sm ghost" style="color:var(--ng)" onclick="deleteCat('${c.id}')">分類削除</button>
           </div>
         </div>
@@ -1352,12 +1364,13 @@ function renderTermCard(t){
       ${fig}
       ${gallery}
       <div class="term-foot">
+        <button class="btn sm ghost ai" onclick="openDeepDive('${t.id}')" title="AIで解説を深掘り・補強">${AI_ICON}AI深掘</button>
+        <button class="btn sm ghost ai" onclick="openAiQuiz('${t.id}','choice')" title="AIで4択問題を作成">${AI_ICON}AI4択</button>
+        <button class="btn sm ghost ai" onclick="openAiQuiz('${t.id}','written')" title="AIで記述問題を作成">${AI_ICON}AI記述</button>
         <button class="btn sm ghost" onclick="speakTerm('${t.id}')" title="用語と定義を読み上げ">${SPK_ICON}読み上げ</button>
-        <button class="btn sm ghost ai" onclick="openAiQuiz('${t.id}','choice')">${AI_ICON}AIで4択作成</button>
-        <button class="btn sm ghost ai" onclick="openAiQuiz('${t.id}','written')">${AI_ICON}AIで記述作成</button>
         <button class="btn sm ghost" onclick="openQuizManager('${t.id}')">手動クイズ${nq?`（${nq}）`:''}</button>
         <button class="btn sm ghost" onclick="openTermForm('${t.id}')">編集</button>
-        <button class="btn sm ghost" style="color:var(--ng)" onclick="deleteTerm('${t.id}')">削除</button>
+        <button class="btn sm ghost foot-del" style="color:var(--ng)" onclick="deleteTerm('${t.id}')">削除</button>
       </div>
     </div>
   </details>`;
@@ -1543,6 +1556,43 @@ function mergeCategories(sourceId,targetId){
   if(DB.flags[sourceId]){delete DB.flags[sourceId];DB.flags[targetId]=true;saveFlags();} /* 統合元のフラグは統合先へ引き継ぐ */
   saveContents();saveUI();renderLearn();renderQuizSetup();renderReview();
   toast(`「${src.name}」を「${tgt.name}」に統合しました（用語${moved.length}件を移動）`);
+}
+function openCatSplit(sourceId){
+  const src=getCat(sourceId);if(!src)return;
+  const ts=termsOf(sourceId);
+  if(ts.length<2){toast('分解するには用語が2件以上必要です',true);return;}
+  const list=ts.map(t=>`<label class="merge-opt"><input type="checkbox" value="${t.id}"><span class="merge-name">${esc(t.name)}</span></label>`).join('');
+  const bg=openModal(`<h2>分類を分解</h2>
+    <p class="muted" style="margin:0 0 12px">「<b>${esc(src.name)}</b>」から選んだ用語を、新しいカテゴリへ切り出します（用語・クイズ・弱点・理解度はそのまま移動します）。</p>
+    <div class="field"><label>新しいカテゴリ名 *</label><input id="splitName" placeholder="例: ${esc(src.name)}（応用）"></div>
+    <label style="display:block;font-size:13px;color:var(--ink2);margin:2px 0 6px">切り出す用語を選択（残りは元のカテゴリに残ります）</label>
+    <div class="merge-list" id="splitList">${list}</div>
+    <div class="row" style="margin:6px 0 0"><button class="btn sm" id="splitAll">すべて選択</button><button class="btn sm" id="splitNone">選択解除</button><span class="muted" id="splitCount"></span></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" id="splitGo">分解する</button></div>`);
+  const upd=()=>{const n=bg.querySelectorAll('#splitList input:checked').length;bg.querySelector('#splitCount').textContent=n?`${n}件を切り出し`:'用語を選んでください';};
+  bg.querySelectorAll('#splitList input').forEach(c=>c.addEventListener('change',upd));
+  bg.querySelector('#splitAll').onclick=()=>{bg.querySelectorAll('#splitList input').forEach(c=>c.checked=true);upd();};
+  bg.querySelector('#splitNone').onclick=()=>{bg.querySelectorAll('#splitList input').forEach(c=>c.checked=false);upd();};
+  upd();
+  bg.querySelector('#splitGo').onclick=()=>{
+    const name=bg.querySelector('#splitName').value.trim();
+    const ids=[...bg.querySelectorAll('#splitList input:checked')].map(c=>c.value);
+    if(!name){toast('新しいカテゴリ名を入力してください',true);return;}
+    if(!ids.length){toast('切り出す用語を1つ以上選んでください',true);return;}
+    if(ids.length>=ts.length){toast('すべては切り出せません。元のカテゴリに1件以上残してください',true);return;}
+    splitCategory(sourceId,name,ids);closeModal();
+  };
+}
+function splitCategory(sourceId,newName,termIds){
+  const src=getCat(sourceId);if(!src)return;
+  const newId=uid('c');
+  DB.contents.categories.push({id:newId,name:newName,order:(src.order||0)+0.5});
+  DB.contents.categories.sort((a,b)=>a.order-b.order).forEach((c,i)=>c.order=i); /* 元カテゴリの直後に並べ、番号を詰め直す */
+  const idset=new Set(termIds);
+  let k=0;DB.contents.terms.filter(t=>idset.has(t.id)).sort((a,b)=>(a.order||0)-(b.order||0)).forEach(t=>{t.cat=newId;t.order=k++;});
+  let j=0;termsOf(sourceId).forEach(t=>t.order=j++); /* 残った用語の順序を詰め直す */
+  saveContents();renderLearn();renderQuizSetup();renderReview();
+  toast(`「${src.name}」から${termIds.length}件を「${newName}」へ分解しました`);
 }
 function removeTermData(termId){
   const term=getTerm(termId);
@@ -1735,30 +1785,102 @@ async function aiGenAndShow(term,type,bg,instr){
     body.querySelector('#aiEditInstr').onclick=()=>aiShowForm(term,type,bg,instr);
     return;
   }
-  let preview;
+  let editor;
   if(q.type==='choice'){
-    preview=`<div class="q-text" style="font-size:15.5px;margin:6px 0 12px">${fmtMath(q.q)}</div>
-      <div class="choices">${q.choices.map((c,i)=>`<div class="choice${i===q.answerIndex?' correct':''}" style="cursor:default"><span class="ab">${'ABCD'[i]}</span><span>${fmtMath(c)}</span></div>`).join('')}</div>
-      ${q.expl?`<div class="expl-box" style="margin-top:10px">${fmtMath(q.expl)}</div>`:''}`;
+    editor=`<div class="field"><label>問題文</label><textarea id="eqQ" class="ai-edit" rows="4">${esc(q.q)}</textarea></div>
+      <label style="display:block;font-size:13px;color:var(--ink2);margin:2px 0 6px">選択肢（正解を選択）</label>
+      <div class="ai-choices">${q.choices.map((c,i)=>`<div class="ai-choice"><input type="radio" name="eqAns" value="${i}" ${i===q.answerIndex?'checked':''} aria-label="正解にする"><textarea id="eqC${i}" class="ai-edit" rows="2">${esc(c)}</textarea></div>`).join('')}</div>
+      <div class="field" style="margin-top:12px"><label>解説（任意）</label><textarea id="eqE" class="ai-edit" rows="3">${esc(q.expl||'')}</textarea></div>`;
   }else{
-    preview=`<div class="q-text" style="font-size:15.5px;margin:6px 0 12px">${fmtMath(q.q)}</div>
-      <div class="written-ans"><b>模範解答</b><br>${fmtMath(q.modelAnswer)}</div>
-      ${q.expl?`<div class="expl-box">${fmtMath(q.expl)}</div>`:''}`;
+    editor=`<div class="field"><label>問題文</label><textarea id="eqQ" class="ai-edit" rows="4">${esc(q.q)}</textarea></div>
+      <div class="field"><label>模範解答</label><textarea id="eqM" class="ai-edit" rows="6">${esc(q.modelAnswer)}</textarea></div>
+      <div class="field"><label>解説（任意）</label><textarea id="eqE" class="ai-edit" rows="3">${esc(q.expl||'')}</textarea></div>`;
   }
   body.innerHTML=`${instr?`<p class="muted" style="margin:0 0 8px;font-size:12px">追加指示: ${esc(instr)}</p>`:''}
-    <p class="muted" style="margin:2px 0 10px">内容を確認して保存してください。保存後は「手動クイズ」から編集・削除でき、クイズ・復習に出題されます。</p>
-    ${preview}
+    <p class="muted" style="margin:2px 0 12px">内容はその場で編集できます。修正して保存してください（保存後も「手動クイズ」から再編集できます）。</p>
+    ${editor}
     <div class="modal-foot"><button class="btn sm" onclick="closeModal()">キャンセル</button><button class="btn sm" id="aiEdit">指示変更</button><button class="btn sm" id="aiAgain">作り直す</button><button class="btn sm pri" id="aiSave">保存</button></div>`;
   body.querySelector('#aiEdit').onclick=()=>aiShowForm(term,type,bg,instr);
   body.querySelector('#aiAgain').onclick=()=>aiGenAndShow(term,type,bg,instr);
   body.querySelector('#aiSave').onclick=()=>{
-    const quiz=(q.type==='choice')
-      ? {id:uid('q'),termId:term.id,type:'choice',q:q.q,choices:q.choices,answer:q.answerIndex,expl:q.expl,ai:true}
-      : {id:uid('q'),termId:term.id,type:'written',q:q.q,modelAnswer:q.modelAnswer,expl:q.expl,ai:true};
+    const qt=(body.querySelector('#eqQ').value||'').trim();
+    const expl=(body.querySelector('#eqE').value||'').trim();
+    if(!qt){toast('問題文を入力してください',true);return;}
+    let quiz;
+    if(q.type==='choice'){
+      const choices=[0,1,2,3].map(i=>(body.querySelector('#eqC'+i).value||'').trim());
+      const ansEl=body.querySelector('input[name="eqAns"]:checked');
+      const ans=ansEl?parseInt(ansEl.value,10):0;
+      if(choices.some(c=>!c)){toast('選択肢を4つすべて入力してください',true);return;}
+      if(new Set(choices).size!==4){toast('選択肢が重複しています',true);return;}
+      quiz={id:uid('q'),termId:term.id,type:'choice',q:qt,choices,answer:ans,expl,ai:true};
+    }else{
+      const model=(body.querySelector('#eqM').value||'').trim();
+      if(!model){toast('模範解答を入力してください',true);return;}
+      quiz={id:uid('q'),termId:term.id,type:'written',q:qt,modelAnswer:model,expl,ai:true};
+    }
     DB.quizzes.push(quiz);saveQuizzes();closeModal();renderLearn();
     if($('#mqList'))renderQuizManagerList(term.id);
     toast('AI問題を保存しました（手動クイズに追加）');
   };
+}
+async function geminiDeepDive(term,instr){
+  const payload={name:term.name,definition:term.def,formula:term.formula||'',note:term.note||''};
+  const extra=(instr&&instr.trim())?('\n\n【ユーザーからの観点・指示（正確さを保った上で反映）】\n'+instr.trim()):'';
+  const sys='あなたは学習者の理解を深めるための解説を書くアシスタントです。与えた用語の既存の説明を「充足（補強）」する追加解説を作成してください。次のJSONだけで返す（前置き・コードフェンス禁止）:\n{"text":"追加解説。既存説明と過度に重複せず、背景・直感的なイメージ・具体例・注意点・関連概念との違いなどを簡潔に。事実の正確さを最優先。日本語。数式は ^{ } で上付き、_{ } で下付き"}\n条件: 誤りを書かない／与えた情報と確立された一般知識に基づく／冗長にしすぎない（目安200〜500字。指示があればそれに従う）。';
+  const r=await callGemini('次の用語の理解を深める追加解説を作成してください:\n'+JSON.stringify(payload)+extra,sys);
+  if(!r||typeof r.text!=='string'||!r.text.trim())throw new Error('生成結果の形式が不正でした');
+  return r.text.trim();
+}
+function openDeepDive(termId){
+  const term=getTerm(termId);if(!term)return;
+  if(!DB.settings.useGemini||!DB.settings.apiKey){
+    openModal(`<h2>AI深掘り</h2>
+      <p>この機能はGemini APIを使います。設定タブでAPIキーを登録し、「Gemini機能を使う」をONにすると利用できます。</p>
+      <div class="modal-foot"><button class="btn" onclick="closeModal()">閉じる</button><button class="btn pri" onclick="closeModal();switchView('settings')">設定を開く</button></div>`);
+    return;
+  }
+  const bg=openModal(`<h2>${AI_ICON}AI深掘り</h2>
+    <p class="muted" style="margin:0 0 10px">「<b>${esc(term.name)}</b>」の解説を、AIで深掘り・補強します。</p>
+    <div id="ddBody"></div>`,true);
+  ddForm(term,bg,'');
+}
+function ddForm(term,bg,instr){
+  const body=bg.querySelector('#ddBody');
+  body.innerHTML=`<div class="field"><label>深掘りの観点（任意）</label>
+      <textarea id="ddInstr" class="ai-edit" rows="3" placeholder="例：直感的なイメージ／具体例／数式の導出／関連手法との違い／実務での注意点 など">${esc(instr||'')}</textarea></div>
+    <p class="muted" style="margin:-2px 0 0;font-size:12px">既存の定義・数式・補足をもとに、追加の解説を作成します。</p>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" id="ddGo">深掘りする</button></div>`;
+  body.querySelector('#ddGo').onclick=()=>ddGenAndShow(term,bg,body.querySelector('#ddInstr').value.trim());
+  const ta=body.querySelector('#ddInstr');if(ta)ta.focus();
+}
+async function ddGenAndShow(term,bg,instr){
+  const body=bg.querySelector('#ddBody');
+  body.innerHTML=aiSpinner();
+  let text;
+  try{text=await geminiDeepDive(term,instr);}
+  catch(e){
+    body.innerHTML=`<div class="note-box" style="border-color:var(--ng)">生成に失敗しました。${esc(e.message||'通信エラー')}</div>
+      <div class="modal-foot"><button class="btn sm" onclick="closeModal()">閉じる</button><button class="btn sm" id="ddEditInstr">観点変更</button><button class="btn sm pri" id="ddRetry">再試行</button></div>`;
+    body.querySelector('#ddRetry').onclick=()=>ddGenAndShow(term,bg,instr);
+    body.querySelector('#ddEditInstr').onclick=()=>ddForm(term,bg,instr);
+    return;
+  }
+  body.innerHTML=`${instr?`<p class="muted" style="margin:0 0 8px;font-size:12px">観点: ${esc(instr)}</p>`:''}
+    <div class="field"><label>AIの深掘り結果（その場で編集できます）</label><textarea id="ddText" class="ai-edit" rows="12">${esc(text)}</textarea></div>
+    <p class="muted" style="margin:-2px 0 10px;font-size:12px">この内容を用語の情報へ反映します。反映先を選んでください（末尾に追記されます）。</p>
+    <div class="modal-foot" style="flex-wrap:wrap"><button class="btn sm" onclick="closeModal()">キャンセル</button><button class="btn sm" id="ddAgain">作り直す</button><button class="btn sm" id="ddToNote">補足に追記</button><button class="btn sm pri" id="ddToDef">定義に追記</button></div>`;
+  body.querySelector('#ddAgain').onclick=()=>ddGenAndShow(term,bg,instr);
+  const apply=(field)=>{
+    const add=(body.querySelector('#ddText').value||'').trim();
+    if(!add){toast('反映する内容がありません',true);return;}
+    const cur=(term[field]||'').trim();
+    term[field]=cur?(cur+'\n\n'+add):add;
+    delete DB.pool[term.id];savePool();saveContents();closeModal();renderLearn();renderReview();
+    toast(field==='def'?'定義に追記しました':'補足に追記しました');
+  };
+  body.querySelector('#ddToDef').onclick=()=>apply('def');
+  body.querySelector('#ddToNote').onclick=()=>apply('note');
 }
 function openQuizForm(termId,quizId){
   const q=quizId?DB.quizzes.find(x=>x.id===quizId):null;
@@ -1996,13 +2118,12 @@ function renderQuizSetup(){
   const aiAvail=!!(DB.settings.useGemini&&DB.settings.apiKey);
   const cb=$('#qUseAI'),sw=$('#qAiSwitch');
   if(cb){
-    cb.checked=aiAvail&&(DB.settings.quizAI!==false);
+    cb.checked=aiAvail&&(DB.settings.quizAI===true); /* 既定はOFF */
     cb.disabled=!aiAvail;
     sw.classList.toggle('disabled',!aiAvail);
     $('#qAiLabel').textContent=aiAvail?'AIで問題を生成する（OFFで既存の問題のみ）':'AIで問題を生成する（設定でAPIキー登録が必要）';
   }
-  const fo=$('#qFlagOnly');if(fo)fo.checked=!!DB.ui.quizFlagOnly;
-  renderTodayReview();
+  const fo=$('#qFlagOnly');if(fo)fo.checked=DB.ui.quizFlagOnly!==false; /* 既定はON */
 }
 function renderTodayReview(){
   const el=$('#todayReview');if(!el)return;
@@ -2298,13 +2419,11 @@ function weakEntries(){
   return out;
 }
 function renderReview(){
+  renderTodayReview();
   const entries=weakEntries();saveWeak();
   const num=$('#weakNum');
   num.textContent=entries.length;
   num.classList.toggle('zero',!entries.length);
-  $('#weakSummaryText').textContent=entries.length
-    ?`優先度の高い順に出題します。間違えた形式（${entries.slice(0,3).map(e=>e.label).join('、')} など）を重点的に確認できます。`
-    :'弱点はありません。クイズで間違えた問題が自動的にここに蓄積されます。';
   $('#btnStartReview').disabled=!entries.length;
 
   /* 弱点テーブル */
@@ -2320,7 +2439,7 @@ function renderReview(){
       <td><button class="btn sm ghost" onclick="removeWeak('${e.kind}','${e.id}')">外す</button></td>
     </tr>`).join(''):`<tr><td colspan="7" class="muted" style="text-align:center;padding:22px">弱点リストは空です</td></tr>`)+'</tbody>';
 
-  renderDashDaily();renderDashCats();renderDashMastery();
+  renderDashDaily();renderDashMastery();
 }
 function removeWeak(kind,id){
   if(kind==='term')delete DB.weak.terms[id];else delete DB.weak.quizzes[id];

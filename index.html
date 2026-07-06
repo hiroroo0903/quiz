@@ -880,6 +880,9 @@ let recog=null, recording=false;
    Gemini call + dynamic depth schema
    ============================================================ */
 function branchMax(){ return state.branch||DEFAULT_BRANCH; }
+/* NOTE: no minItems/maxItems on nested arrays — bounded array lengths on deeply
+   nested schemas trigger Gemini's "too many states for serving" (HTTP 400).
+   The branch count (2〜N) is enforced via the prompt instead. */
 function nodeSchema(d){
   if(d<=1){
     return { type:"object", properties:{ question:{type:"string"} }, required:["question"], propertyOrdering:["question"] };
@@ -888,7 +891,7 @@ function nodeSchema(d){
     type:"object",
     properties:{
       question:{type:"string"},
-      children:{ type:"array", minItems:2, maxItems:branchMax(), items:nodeSchema(d-1) }
+      children:{ type:"array", items:nodeSchema(d-1) }
     },
     required:["question","children"],
     propertyOrdering:["question","children"]
@@ -897,7 +900,7 @@ function nodeSchema(d){
 function rootSchema(d){
   return {
     type:"object",
-    properties:{ questions:{ type:"array", minItems:2, maxItems:branchMax(), items:nodeSchema(d) } },
+    properties:{ questions:{ type:"array", items:nodeSchema(d) } },
     required:["questions"],
     propertyOrdering:["questions"]
   };
@@ -953,7 +956,7 @@ function clarifySchema(){
       needsClarification:{type:"boolean"},
       questions:{ type:"array", items:{
         type:"object",
-        properties:{ question:{type:"string"}, options:{ type:"array", minItems:4, maxItems:4, items:{type:"string"} } },
+        properties:{ question:{type:"string"}, options:{ type:"array", items:{type:"string"} } },
         required:["question","options"], propertyOrdering:["question","options"]
       } }
     },
@@ -1555,9 +1558,9 @@ function collectLeaves(){
 function optionsSchema(count){
   return {
     type:"object",
-    properties:{ items:{ type:"array", minItems:count, maxItems:count, items:{
+    properties:{ items:{ type:"array", items:{
       type:"object",
-      properties:{ index:{type:"integer"}, options:{ type:"array", minItems:4, maxItems:4, items:{type:"string"} } },
+      properties:{ index:{type:"integer"}, options:{ type:"array", items:{type:"string"} } },
       required:["index","options"], propertyOrdering:["index","options"]
     } } },
     required:["items"], propertyOrdering:["items"]

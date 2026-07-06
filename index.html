@@ -34,7 +34,7 @@ html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.85;-webkit-font-smoothing:antialiased}
 h1,h2,h3{line-height:1.4;margin:0}
 button{font-family:inherit;font-size:14px;cursor:pointer}
-input,textarea,select{font-family:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--line2);border-radius:8px;padding:8px 10px}
+input,textarea,select{font-family:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--line2);border-radius:8px;padding:8px 10px}
 input:focus,textarea:focus,select:focus,button:focus-visible,a:focus-visible,.choice:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 textarea{width:100%;resize:vertical;line-height:1.7}
 a{color:var(--accent);text-decoration:none}
@@ -170,6 +170,29 @@ details.cat>summary:hover{background:var(--surface2)}
 .cat-no{font-family:var(--serif);font-size:13px;color:var(--accent);border:1px solid var(--accent-line);border-radius:6px;padding:1px 8px;letter-spacing:.08em;flex-shrink:0}
 .cat-name{font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.03em;flex:1}
 .cat-meta{font-size:12px;color:var(--ink2);flex-shrink:0}
+.cat-flag{border:none;background:none;padding:4px;margin:0 2px 0 6px;color:var(--ink3);display:inline-flex;align-items:center;border-radius:6px;flex-shrink:0;line-height:0}
+.cat-flag:hover{background:var(--surface2);color:var(--ink2)}
+.cat-flag.on{color:#E0483D}
+#btnFlagFilter.on{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent-ink)}
+.toc-flag{font-size:12px}
+.term .term-flagbtn{margin-left:auto}
+.today-review:empty{display:none}
+.today-review{margin:0 0 18px}
+.tr-inner{border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:12px;padding:14px 16px}
+.tr-inner.done{display:flex;align-items:center;gap:10px;border-color:var(--line2);background:var(--surface)}
+.tr-check{color:var(--ok);font-weight:800;font-size:18px}
+.tr-head{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+.tr-badge{font-size:13px;font-weight:700;color:var(--accent-ink)}
+.tr-num{font-size:22px;font-family:var(--serif);color:var(--accent-ink)}
+.ms-legend{display:flex;flex-wrap:wrap;gap:12px;margin:6px 0 12px;font-size:12px;color:var(--ink2)}
+.ms-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.ms-dot.o{background:var(--ok)}.ms-dot.t{background:#C9A227}.ms-dot.x{background:var(--ng)}.ms-dot.un{background:var(--line2)}
+.ms-row{display:grid;grid-template-columns:1fr;gap:4px;margin:10px 0}
+.ms-name{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:6px}
+.ms-bar{display:flex;height:14px;border-radius:5px;overflow:hidden;background:var(--surface2)}
+.ms-seg{height:100%}
+.ms-seg.o{background:var(--ok)}.ms-seg.t{background:#C9A227}.ms-seg.x{background:var(--ng)}.ms-seg.un{background:var(--line2)}
+.ms-meta{font-size:12px;color:var(--ink2)}
 .caret{width:16px;height:16px;color:var(--ink2);transition:transform .2s;flex-shrink:0}
 details[open]>summary .caret{transform:rotate(90deg)}
 .cat-body{border-top:1px solid var(--line);padding:8px 18px 16px}
@@ -232,13 +255,14 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
 .q-src{display:flex;gap:6px;margin-bottom:10px}
 .q-text{font-size:17.5px;font-weight:600;line-height:1.9;white-space:pre-wrap;margin-bottom:18px;overflow-wrap:anywhere}
 .choices{display:grid;gap:9px}
-.choice{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:9px;padding:12px 15px;font-size:15px;line-height:1.7;display:flex;gap:11px;align-items:flex-start;transition:border-color .12s,background .12s;overflow-wrap:anywhere}
+.choice{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:9px;padding:12px 15px;font-size:15px;line-height:1.7;display:flex;gap:11px;align-items:flex-start;transition:border-color .12s,background .12s;overflow-wrap:anywhere;color:var(--ink);-webkit-text-fill-color:var(--ink)}
 .choice>span:last-child{flex:1;min-width:0}
 .choice:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
-.choice .ab{font-family:var(--serif);font-weight:700;color:var(--accent);flex-shrink:0}
+.choice .ab{font-family:var(--serif);font-weight:700;color:var(--accent);-webkit-text-fill-color:var(--accent);flex-shrink:0}
 .choice.correct{border-color:var(--ok);background:var(--ok-soft)}
 .choice.wrong{border-color:var(--ng);background:var(--ng-soft)}
-.choice:disabled{cursor:default}
+.choice:disabled{cursor:default;opacity:1;color:var(--ink);-webkit-text-fill-color:var(--ink)}
+.choice:disabled .ab{-webkit-text-fill-color:var(--accent)}
 .judge{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;margin:18px 0 8px}
 .judge.ok{color:var(--ok)}.judge.ng{color:var(--ng)}
 .judge svg{width:24px;height:24px}
@@ -345,6 +369,7 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
         <button id="btnExpandAll" aria-label="すべて開く" title="すべて開く"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 13l6 6 6-6"/><path d="M6 5l6 6 6-6"/></svg></button>
         <button id="btnCollapseAll" aria-label="すべて閉じる" title="すべて閉じる"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 11l6-6 6 6"/><path d="M6 19l6-6 6 6"/></svg></button>
       </div>
+      <button class="btn sm" id="btnFlagFilter" aria-label="フラグで絞り込み"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 21V4M4 4h11l-1.5 4L16 12H4"/></svg><span class="ff-label">フラグ</span></button>
       <button class="btn sm" id="btnAddCat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>カテゴリ追加</button>
       <button class="btn sm pri" id="btnBulkImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>一括追加</button>
     </div>
@@ -365,6 +390,7 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
 <!-- ============ クイズビュー ============ -->
 <main id="view-quiz" class="view">
   <div id="quizSetup" class="quiz-setup">
+    <div id="todayReview" class="today-review"></div>
     <h2 class="sect-title">クイズ設定</h2>
     <p class="muted" style="margin:0 0 6px">出題するカテゴリを選んでください（複数選択可）。</p>
     <div class="row" style="margin-bottom:4px">
@@ -378,6 +404,7 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
       <button data-n="5">5問</button><button data-n="10" class="on">10問</button><button data-n="20">20問</button><button data-n="30">30問</button><button data-n="40">40問</button><button data-n="50">50問</button>
     </div>
     <label class="ai-switch" id="qAiSwitch"><input type="checkbox" id="qUseAI"><span id="qAiLabel">AIで問題を生成する</span></label>
+    <label class="ai-switch" id="qFlagSwitch"><input type="checkbox" id="qFlagOnly"><span>🚩 フラグを付けた範囲のみ出題する</span></label>
     <div style="margin-top:20px" class="row">
       <button class="btn pri" id="btnStartQuiz" style="font-size:16px;padding:11px 28px">クイズを開始</button>
       <span class="gemini-status" id="geminiStatusLine"><span class="dot" id="geminiDot"></span><span id="geminiStatusText"></span></span>
@@ -404,6 +431,7 @@ details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
     </div>
     <div class="card"><h3>日別の演習量と正答率（直近30日）</h3><div id="dashDaily"></div></div>
     <div class="card"><h3>カテゴリ別正答率</h3><div id="dashCats"></div></div>
+    <div class="card"><h3>章別の定着度（手動クイズの理解度）</h3><div id="dashMastery"></div></div>
   </div>
   <h2 class="sect-title">弱点リスト（優先度順）</h2>
   <p class="muted" style="margin:-4px 0 12px">優先度 = 間違えた回数 × 経過日数。連続2回正解すると自動的にリストから外れます。</p>
@@ -1059,6 +1087,7 @@ function loadActiveNotebook(){
   DB.stats=load(nbKey('stats'),{sessions:[],terms:{}});
   DB.pool=load(nbKey('pool'),{});
   DB.grades=load(nbKey('grades'),{}); /* 手動クイズの理解度: quizId -> {g:'o'|'t'|'x', at, n} */
+  DB.flags=load(nbKey('flags'),{}); /* 章(分類)フラグ: catId -> true */
   DB.ui=load(nbKey('ui'),{scrollY:0,open:{},view:'learn'});
   if(!DB.ui.open)DB.ui.open={};
 }
@@ -1077,8 +1106,69 @@ const saveStats=()=>save(nbKey('stats'),DB.stats);
 const saveSettings=()=>save(LS.settings,DB.settings);
 const savePool=()=>save(nbKey('pool'),DB.pool);
 const saveGrades=()=>save(nbKey('grades'),DB.grades);
-function setGrade(quizId,g){const cur=DB.grades[quizId]||{n:0};DB.grades[quizId]={g,at:todayStr(),n:(cur.n||0)+1};saveGrades();}
+const saveFlags=()=>save(nbKey('flags'),DB.flags);
+function isFlagged(catId){return !!DB.flags[catId];}
+function toggleFlag(catId){if(DB.flags[catId])delete DB.flags[catId];else DB.flags[catId]=true;saveFlags();renderLearn();}
+function flagCount(){return DB.contents.categories.filter(c=>isFlagged(c.id)).length+DB.contents.terms.filter(t=>isFlagged(t.id)).length;}
+function toggleFlagFilter(){DB.ui.flagOnly=!DB.ui.flagOnly;saveUI();renderLearn();}
+/* フラグ範囲（フラグ付き用語＋フラグ付き章の全用語）の用語IDセット */
+function flaggedTermSet(){
+  const fcats=new Set(DB.contents.categories.filter(c=>isFlagged(c.id)).map(c=>c.id));
+  const s=new Set();
+  DB.contents.terms.forEach(t=>{if(isFlagged(t.id)||fcats.has(t.cat))s.add(t.id);});
+  return s;
+}
+/* ==================== 間隔反復（SRS） ==================== */
+const SRS_INTERVALS=[0,1,3,7,16,35]; /* Leitherボックス0..5 の次回までの日数 */
+function addDaysStr(baseStr,days){const d=new Date((baseStr||todayStr())+'T00:00:00');d.setDate(d.getDate()+days);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function setGrade(quizId,g){
+  const cur=DB.grades[quizId]||{n:0,box:0};
+  let box=cur.box||0;
+  if(g==='o')box=Math.min(5,box+1); else if(g==='t')box=1; else box=0; /* ○で間隔UP・△は短め・×は即再出題 */
+  const today=todayStr();
+  DB.grades[quizId]={g,at:today,n:(cur.n||0)+1,box,due:addDaysStr(today,SRS_INTERVALS[box])};
+  saveGrades();
+}
 function gradeRank(quizId){const gr=DB.grades[quizId];if(!gr||!gr.g)return 0;return gr.g==='x'?1:gr.g==='t'?2:3;} /* 未出題0 < ×1 < △2 < ○3 */
+function isUnseen(quizId){const gr=DB.grades[quizId];return !gr||!gr.g;}
+function quizDue(quizId){const gr=DB.grades[quizId];if(!gr||!gr.g)return true;return (gr.due||gr.at||todayStr())<=todayStr();} /* 未出題・期日到来で復習対象 */
+/* 今日の復習キュー（現在ノートの全手動クイズ。未出題を最優先、次に期日が古い順） */
+function dueManualQuizzes(){
+  const today=todayStr();
+  const out=DB.quizzes.filter(q=>getTerm(q.termId)&&quizDue(q.id));
+  out.sort((a,b)=>{
+    const ua=isUnseen(a.id),ub=isUnseen(b.id);
+    if(ua!==ub)return ua?-1:1;
+    const da=(DB.grades[a.id]&&DB.grades[a.id].due)||today, db=(DB.grades[b.id]&&DB.grades[b.id].due)||today;
+    if(da!==db)return da<db?-1:1;
+    return Math.random()-0.5;
+  });
+  return out;
+}
+function startTodayReview(){
+  const due=dueManualQuizzes();
+  if(!due.length){toast('今日の復習はありません。お疲れさまでした！');return;}
+  const picked=due.slice(0,50);
+  const cats=[...new Set(picked.map(q=>{const t=getTerm(q.termId);return t?t.cat:null;}).filter(Boolean))];
+  switchView('quiz');
+  startQuiz(cats,picked.length,'review',picked.map(m=>manualToItem(m)));
+  if(due.length>50)toast('今日の復習'+due.length+'問のうち50問を出題します（残りは次回）');
+}
+/* ==================== 読み上げ（TTS） ==================== */
+function stripForSpeech(s){return (s||'').replace(/<[^>]+>/g,'').replace(/\$([^$]*)\$/g,'$1').replace(/[_^]\{([^}]*)\}/g,'$1').replace(/[#*`>]/g,'').replace(/\s+/g,' ').trim();}
+function ttsAvailable(){return typeof window!=='undefined'&&'speechSynthesis'in window;}
+function speak(text){
+  if(!ttsAvailable()){toast('この端末は読み上げに対応していません',true);return false;}
+  try{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ja-JP';u.rate=1;window.speechSynthesis.speak(u);return true;}catch(e){return false;}
+}
+function stopSpeak(){if(ttsAvailable()){try{window.speechSynthesis.cancel();}catch(e){}}}
+function speakTerm(termId){
+  const t=getTerm(termId);if(!t)return;
+  if(ttsAvailable()&&window.speechSynthesis.speaking){stopSpeak();return;} /* 再タップで停止 */
+  const parts=[t.name,stripForSpeech(t.def)];
+  if(t.note)parts.push(stripForSpeech(t.note));
+  speak(parts.filter(Boolean).join('。'));
+}
 const saveUI=()=>save(nbKey('ui'),DB.ui);
 const saveNotebooks=()=>save(LS.notebooks,{active:DB.activeId,list:DB.notebooks});
 let _uiTimer=null;
@@ -1191,6 +1281,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#modalRoot').chi
 const CARET='<svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
 const TCARET='<svg class="tcaret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 18l6-6-6-6"/></svg>';
 const AI_ICON='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-2px;margin-right:3px"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8L18 15z"/></svg>';
+const FLAG_ICON='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 21V4M4 4h11l-1.5 4L16 12H4"/></svg>';
+const SPK_ICON='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" style="vertical-align:-2px;margin-right:2px"><path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13"/></svg>';
 
 function isOpen(id){return DB.ui.open[id]!==false;}
 function bindLearnToggles(){
@@ -1205,18 +1297,29 @@ function bindLearnToggles(){
 function renderLearn(){
   renderTOC();
   const area=$('#contentArea');
-  const cats=DB.contents.categories.slice().sort((a,b)=>a.order-b.order);
-  area.innerHTML=cats.map((c,i)=>{
-    const ts=termsOf(c.id);
+  const allCats=DB.contents.categories.slice().sort((a,b)=>a.order-b.order);
+  const flagOnly=!!DB.ui.flagOnly;
+  updateFlagFilterBtn();
+  const shown=allCats.map((c,i)=>{
+    const all=termsOf(c.id);const catFlag=isFlagged(c.id);
+    const ts=flagOnly?(catFlag?all:all.filter(t=>isFlagged(t.id))):all;
+    return {c,i,ts,catFlag,show:!flagOnly||catFlag||ts.length>0};
+  }).filter(x=>x.show);
+  if(flagOnly&&!shown.length){
+    area.innerHTML='<p class="muted" style="padding:12px 4px">フラグを立てた章・用語がありません。各章の🚩、または用語カードの🚩でフラグを立てられます。</p>';
+    bindLearnToggles();return;
+  }
+  area.innerHTML=shown.map(({c,i,ts,catFlag})=>{
+    const fl=catFlag;
     return `<section class="cat-block" id="cat-${c.id}">
       <details class="cat" ${isOpen(c.id)?'open':''} data-cat="${c.id}">
-        <summary><span class="cat-no">${String(i+1).padStart(2,'0')}</span><span class="cat-name">${esc(c.name)}</span><span class="cat-meta">${ts.length}件</span>${CARET}</summary>
+        <summary><span class="cat-no">${String(i+1).padStart(2,'0')}</span><span class="cat-name">${esc(c.name)}</span><button class="cat-flag${fl?' on':''}" title="${fl?'フラグを外す':'フラグを立てる'}" aria-label="フラグ" onclick="event.preventDefault();event.stopPropagation();toggleFlag('${c.id}')">${FLAG_ICON}</button><span class="cat-meta">${ts.length}件</span>${CARET}</summary>
         <div class="cat-body">
-          ${ts.map(t=>renderTermCard(t)).join('')||'<p class="muted" style="padding:10px 4px">この分類にはまだ用語がありません。</p>'}
+          ${ts.map(t=>renderTermCard(t)).join('')||'<p class="muted" style="padding:10px 4px">'+(flagOnly?'フラグを付けた用語はありません。':'この分類にはまだ用語がありません。')+'</p>'}
           <div class="cat-actions">
             <button class="btn sm ghost" onclick="openTermForm(null,'${c.id}')">＋用語追加</button>
             <button class="btn sm ghost" onclick="openCatForm('${c.id}')">分類名編集</button>
-            ${cats.length>1?`<button class="btn sm ghost" onclick="openCatMerge('${c.id}')">分類統合</button>`:''}
+            ${allCats.length>1?`<button class="btn sm ghost" onclick="openCatMerge('${c.id}')">分類統合</button>`:''}
             <button class="btn sm ghost" style="color:var(--ng)" onclick="deleteCat('${c.id}')">分類削除</button>
           </div>
         </div>
@@ -1226,13 +1329,21 @@ function renderLearn(){
   applySearch();
   bindLearnToggles();
 }
+function updateFlagFilterBtn(){
+  const b=$('#btnFlagFilter');if(!b)return;
+  const n=flagCount();
+  b.classList.toggle('on',!!DB.ui.flagOnly);
+  b.setAttribute('title',DB.ui.flagOnly?'すべての章を表示':'フラグを立てた章のみ表示');
+  const lab=b.querySelector('.ff-label');if(lab)lab.textContent=DB.ui.flagOnly?`フラグのみ (${n})`:`フラグ${n?' ('+n+')':''}`;
+}
 function renderTermCard(t){
   const nq=quizzesOf(t.id).length;
   const fig=t.fig?`<div class="fig-box">${figureFor(t.fig)}</div>`:'';
   const imgs=t.imgs||[];
   const gallery=imgs.length?`<div class="term-imgs">${imgs.map((src,i)=>{const u=resolveImg(src);return u?`<button class="term-img" onclick="openImageViewer('${t.id}',${i})"><img src="${u}" loading="lazy" alt="添付画像 ${i+1}"></button>`:`<div class="term-img term-img-loading">読み込み中…</div>`;}).join('')}</div>`:'';
+  const tf=isFlagged(t.id);
   return `<details class="term" ${isOpen(t.id)?'open':''} id="term-${t.id}" data-term="${t.id}">
-    <summary>${TCARET}<span class="term-name">${esc(t.name)}</span>${nq?`<span class="term-sub">✎ 手動クイズ ${nq}</span>`:''}</summary>
+    <summary>${TCARET}<span class="term-name">${esc(t.name)}</span>${nq?`<span class="term-sub">✎ 手動クイズ ${nq}</span>`:''}<button class="cat-flag term-flagbtn${tf?' on':''}" title="${tf?'フラグを外す':'フラグを立てる'}" aria-label="フラグ" onclick="event.preventDefault();event.stopPropagation();toggleFlag('${t.id}')">${FLAG_ICON}</button></summary>
     <div class="term-body">
       <div class="term-def">${fmtDef(t.def,t.kps)}</div>
       ${t.formula?`<span class="kv-label">数式</span><div class="formula">${fmtMath(t.formula)}</div>`:''}
@@ -1241,6 +1352,7 @@ function renderTermCard(t){
       ${fig}
       ${gallery}
       <div class="term-foot">
+        <button class="btn sm ghost" onclick="speakTerm('${t.id}')" title="用語と定義を読み上げ">${SPK_ICON}読み上げ</button>
         <button class="btn sm ghost ai" onclick="openAiQuiz('${t.id}','choice')">${AI_ICON}AIで4択作成</button>
         <button class="btn sm ghost ai" onclick="openAiQuiz('${t.id}','written')">${AI_ICON}AIで記述作成</button>
         <button class="btn sm ghost" onclick="openQuizManager('${t.id}')">手動クイズ${nq?`（${nq}）`:''}</button>
@@ -1252,10 +1364,16 @@ function renderTermCard(t){
 }
 function renderTOC(){
   const cats=DB.contents.categories.slice().sort((a,b)=>a.order-b.order);
-  $('#tocList').innerHTML=cats.map((c,i)=>`<div class="toc-cat" data-cat="${c.id}">
-    <a href="#learn" onclick="jumpToCat('${c.id}');return false;">${String(i+1).padStart(2,'0')}　${esc(c.name)}</a>
-    <ul class="toc-terms">${termsOf(c.id).map(t=>`<li><a href="#learn" onclick="jumpToTerm('${t.id}');return false;">${esc(t.name)}</a></li>`).join('')}</ul>
-  </div>`).join('');
+  const flagOnly=!!DB.ui.flagOnly;
+  const shown=cats.map((c,i)=>{
+    const all=termsOf(c.id);const catFlag=isFlagged(c.id);
+    const ts=flagOnly?(catFlag?all:all.filter(t=>isFlagged(t.id))):all;
+    return {c,i,ts,catFlag,show:!flagOnly||catFlag||ts.length>0};
+  }).filter(x=>x.show);
+  $('#tocList').innerHTML=shown.map(({c,i,ts,catFlag})=>`<div class="toc-cat" data-cat="${c.id}">
+    <a href="#learn" onclick="jumpToCat('${c.id}');return false;">${String(i+1).padStart(2,'0')}　${esc(c.name)}${catFlag?' <span class="toc-flag">🚩</span>':''}</a>
+    <ul class="toc-terms">${ts.map(t=>`<li><a href="#learn" onclick="jumpToTerm('${t.id}');return false;">${esc(t.name)}${!catFlag&&isFlagged(t.id)?' <span class="toc-flag">🚩</span>':''}</a></li>`).join('')}</ul>
+  </div>`).join('')||'<p class="muted" style="font-size:13px;padding:6px 4px">フラグを立てた章・用語がありません</p>';
 }
 function jumpToCat(id){
   if(_restoreCancel){_restoreCancel();_restoreCancel=null;}
@@ -1393,6 +1511,7 @@ function deleteCat(catId){
   if(!confirm(`カテゴリ「${c.name}」を削除しますか？\n含まれる用語 ${n}件、その手動クイズ・弱点記録・生成済み問題も削除されます。`))return;
   termsOf(catId).forEach(t=>removeTermData(t.id));
   DB.contents.categories=DB.contents.categories.filter(x=>x.id!==catId);
+  if(DB.flags[catId]){delete DB.flags[catId];saveFlags();}
   saveContents();renderLearn();renderQuizSetup();renderReview();toast('カテゴリを削除しました');
 }
 function openCatMerge(sourceId){
@@ -1421,6 +1540,7 @@ function mergeCategories(sourceId,targetId){
   DB.contents.categories=DB.contents.categories.filter(c=>c.id!==sourceId);
   DB.contents.categories.sort((a,b)=>a.order-b.order).forEach((c,i)=>c.order=i); /* 並び順を詰め直す */
   delete DB.ui.open[sourceId];
+  if(DB.flags[sourceId]){delete DB.flags[sourceId];DB.flags[targetId]=true;saveFlags();} /* 統合元のフラグは統合先へ引き継ぐ */
   saveContents();saveUI();renderLearn();renderQuizSetup();renderReview();
   toast(`「${src.name}」を「${tgt.name}」に統合しました（用語${moved.length}件を移動）`);
 }
@@ -1434,6 +1554,7 @@ function removeTermData(termId){
   qs.forEach(id=>delete DB.weak.quizzes[id]);
   qs.forEach(id=>delete DB.grades[id]);
   delete DB.pool[termId];
+  if(DB.flags[termId]){delete DB.flags[termId];saveFlags();}
   saveQuizzes();saveWeak();savePool();saveGrades();
 }
 function deleteTerm(termId){
@@ -1880,6 +2001,19 @@ function renderQuizSetup(){
     sw.classList.toggle('disabled',!aiAvail);
     $('#qAiLabel').textContent=aiAvail?'AIで問題を生成する（OFFで既存の問題のみ）':'AIで問題を生成する（設定でAPIキー登録が必要）';
   }
+  const fo=$('#qFlagOnly');if(fo)fo.checked=!!DB.ui.quizFlagOnly;
+  renderTodayReview();
+}
+function renderTodayReview(){
+  const el=$('#todayReview');if(!el)return;
+  const n=dueManualQuizzes().length;
+  if(!n){el.innerHTML=`<div class="tr-inner done"><span class="tr-check">✓</span><div><b>今日の復習は完了</b><span class="muted"> — お疲れさまでした</span></div></div>`;return;}
+  el.innerHTML=`<div class="tr-inner">
+    <div class="tr-head"><span class="tr-badge">🔁 今日の復習</span><b class="tr-num">${n}問</b></div>
+    <p class="muted" style="margin:2px 0 10px">前回の理解度（○/△/×）に応じて出題間隔を自動調整。未出題と復習期日を迎えた問題をまとめて出します。</p>
+    <button class="btn pri" id="btnTodayReview">今日の復習を開始</button>
+  </div>`;
+  const b=$('#btnTodayReview');if(b)b.onclick=startTodayReview;
 }
 function updateCatCount(){
   const n=$$('#quizCatGrid input:checked').length;
@@ -1894,13 +2028,18 @@ function segValue(sel){const b=$(sel+' button.on');return b?parseInt(b.dataset.n
 
 function startQuiz(catIds,n,mode,deckOverride,useAI){
   const ai=useAI!==undefined?useAI:!!(DB.settings.useGemini&&DB.settings.apiKey);
-  const terms=DB.contents.terms.filter(t=>catIds.includes(t.cat));
+  let terms=DB.contents.terms.filter(t=>catIds.includes(t.cat));
+  if(!deckOverride&&DB.ui.quizFlagOnly){ /* フラグ範囲のみ出題 */
+    const fset=flaggedTermSet();
+    terms=terms.filter(t=>fset.has(t.id));
+    if(!terms.length){toast('フラグを付けた用語が選択カテゴリにありません。学習タブで🚩を付けるか、この設定をオフにしてください',true);return;}
+  }
   let deck=[];
   if(deckOverride){deck=deckOverride;}
   else if(ai===false){
     /* AI OFF: 手動クイズのみ。優先度=未出題>×>△>○（同順位は前回評価が古い順）で選ぶ */
     const all=terms.flatMap(t=>quizzesOf(t.id));
-    if(!all.length){toast('このカテゴリには手動クイズがありません。AI生成をONにするか、手動クイズを追加してください',true);return;}
+    if(!all.length){toast('この範囲には手動クイズがありません。AI生成をONにするか、手動クイズを追加してください',true);return;}
     all.sort((a,b)=>{
       const ra=gradeRank(a.id),rb=gradeRank(b.id);
       if(ra!==rb)return ra-rb;
@@ -2181,7 +2320,7 @@ function renderReview(){
       <td><button class="btn sm ghost" onclick="removeWeak('${e.kind}','${e.id}')">外す</button></td>
     </tr>`).join(''):`<tr><td colspan="7" class="muted" style="text-align:center;padding:22px">弱点リストは空です</td></tr>`)+'</tbody>';
 
-  renderDashDaily();renderDashCats();
+  renderDashDaily();renderDashCats();renderDashMastery();
 }
 function removeWeak(kind,id){
   if(kind==='term')delete DB.weak.terms[id];else delete DB.weak.quizzes[id];
@@ -2266,7 +2405,29 @@ function renderDashCats(){
     }).join('')}
   </svg>`;
 }
-/* ==================== テーマ ==================== */
+function renderDashMastery(){
+  const el=$('#dashMastery');if(!el)return;
+  const cats=DB.contents.categories.slice().sort((a,b)=>a.order-b.order);
+  const rows=cats.map(c=>{
+    const qs=termsOf(c.id).flatMap(t=>quizzesOf(t.id));
+    let o=0,tt=0,x=0,un=0;
+    qs.forEach(q=>{const gr=DB.grades[q.id];if(!gr||!gr.g)un++;else if(gr.g==='o')o++;else if(gr.g==='t')tt++;else x++;});
+    const total=qs.length;
+    const weak=x*2+tt; /* 要復習度 */
+    return {name:c.name,total,o,t:tt,x,un,weak};
+  }).filter(r=>r.total>0);
+  if(!rows.length){el.innerHTML='<p class="muted" style="margin:16px 0">まだ手動クイズがありません。用語カードから手動クイズを作り、クイズ後に○/△/×を付けると、ここに定着度が表示されます。</p>';return;}
+  const worst=rows.slice().sort((a,b)=>b.weak-a.weak).filter(r=>r.weak>0).slice(0,3).map(r=>r.name);
+  const seg=(n,total,cls)=>n?`<div class="ms-seg ${cls}" style="width:${n/total*100}%" title="${cls}"></div>`:'';
+  el.innerHTML=`
+    <div class="ms-legend"><span><i class="ms-dot o"></i>○完璧</span><span><i class="ms-dot t"></i>△あいまい</span><span><i class="ms-dot x"></i>×苦手</span><span><i class="ms-dot un"></i>未出題</span></div>
+    ${rows.map(r=>`<div class="ms-row">
+      <div class="ms-name">${esc(r.name)}${r.weak>0&&worst.includes(r.name)?' <span class="chip ng" style="font-size:10px">要復習</span>':''}</div>
+      <div class="ms-bar">${seg(r.o,r.total,'o')}${seg(r.t,r.total,'t')}${seg(r.x,r.total,'x')}${seg(r.un,r.total,'un')}</div>
+      <div class="ms-meta">${r.total>0?Math.round(r.o/r.total*100):0}% 完璧 <span class="muted">/ ${r.total}問</span></div>
+    </div>`).join('')}
+    ${worst.length?`<p class="muted" style="margin:12px 0 2px;font-size:13px">重点復習の候補：<b>${worst.map(esc).join('、')}</b>。クイズ設定の「フラグを付けた範囲のみ」や「今日の復習」で集中的に対策できます。</p>`:'<p class="muted" style="margin:12px 0 2px;font-size:13px">苦手（×/△）はありません。よくできています！</p>'}`;
+}
 const mq=window.matchMedia('(prefers-color-scheme: dark)');
 function applyTheme(){
   const mode=DB.settings.theme;
@@ -2403,6 +2564,7 @@ function parseHash(){
   return out;
 }
 function switchView(name){
+  stopSpeak();
   if($('#view-learn')&&$('#view-learn').classList.contains('on')){DB.ui.scrollY=curScrollY();captureLearnAnchor();} /* 学習から離れる直前の位置を確保 */
   $$('.view').forEach(v=>v.classList.remove('on'));
   const target=$('#view-'+name)||$('#view-learn');
@@ -2462,7 +2624,7 @@ function deleteNotebook(id){
   const nb=DB.notebooks.find(n=>n.id===id);if(!nb)return;
   if(!confirm('ノート「'+nb.name+'」を削除しますか？\nこのノートの用語・クイズ・弱点・統計がすべて削除されます。元に戻せません。'))return;
   if(IDB.ok){const c=id===DB.activeId?DB.contents:load(nbKeyOf(id,'contents'),null);deleteImages(imageRefsOf(c));}
-  ['contents','quizzes','weak','stats','pool','ui','grades'].forEach(b=>{try{localStorage.removeItem(nbKeyOf(id,b));}catch(e){}});
+  ['contents','quizzes','weak','stats','pool','ui','grades','flags'].forEach(b=>{try{localStorage.removeItem(nbKeyOf(id,b));}catch(e){}});
   DB.notebooks=DB.notebooks.filter(n=>n.id!==id);
   if(DB.activeId===id){
     DB.activeId=DB.notebooks[0].id;saveNotebooks();loadActiveNotebook();learnRestored=false;QZ={active:false};
@@ -2550,7 +2712,7 @@ async function buildFullBackup(){
   for(const nb of DB.notebooks){
     let raw;
     if(nb.id===DB.activeId){
-      raw={contents:DB.contents,quizzes:DB.quizzes,weak:DB.weak,stats:DB.stats,pool:DB.pool,grades:DB.grades};
+      raw={contents:DB.contents,quizzes:DB.quizzes,weak:DB.weak,stats:DB.stats,pool:DB.pool,grades:DB.grades,flags:DB.flags};
     }else{
       raw={
         contents:load(nbKeyOf(nb.id,'contents'),{version:1,categories:[],terms:[]}),
@@ -2558,11 +2720,12 @@ async function buildFullBackup(){
         weak:load(nbKeyOf(nb.id,'weak'),{terms:{},quizzes:{}}),
         stats:load(nbKeyOf(nb.id,'stats'),{sessions:[],terms:{}}),
         pool:load(nbKeyOf(nb.id,'pool'),{}),
-        grades:load(nbKeyOf(nb.id,'grades'),{})
+        grades:load(nbKeyOf(nb.id,'grades'),{}),
+        flags:load(nbKeyOf(nb.id,'flags'),{})
       };
     }
     const contents=await inlineImages(raw.contents); /* 画像をdataURLで埋め込み自己完結に */
-    data[nb.id]={contents,quizzes:raw.quizzes,weak:raw.weak,stats:raw.stats,pool:raw.pool,grades:raw.grades};
+    data[nb.id]={contents,quizzes:raw.quizzes,weak:raw.weak,stats:raw.stats,pool:raw.pool,grades:raw.grades,flags:raw.flags};
   }
   return {app:'mlstudy',kind:'full',version:1,exportedAt:new Date().toISOString(),
     notebooks:DB.notebooks.map(n=>({id:n.id,name:n.name,createdAt:n.createdAt||Date.now(),seed:!!n.seed})),
@@ -2582,6 +2745,7 @@ async function importFull(d){
     save(nbKeyOf(meta.id,'stats'),nd.stats||{sessions:[],terms:{}});
     save(nbKeyOf(meta.id,'pool'),nd.pool||{});
     save(nbKeyOf(meta.id,'grades'),nd.grades||{});
+    save(nbKeyOf(meta.id,'flags'),nd.flags||{});
     if(exists){const nb=DB.notebooks.find(n=>n.id===meta.id);nb.name=meta.name;nb.seed=!!meta.seed;updated++;}
     else{DB.notebooks.push({id:meta.id,name:meta.name,createdAt:meta.createdAt||Date.now(),seed:!!meta.seed});added++;}
   }
@@ -2604,6 +2768,7 @@ async function importSingleAsNew(d,file){
   save(nbKeyOf(id,'stats'),d.stats||{sessions:[],terms:{}});
   save(nbKeyOf(id,'pool'),d.pool||{});
   save(nbKeyOf(id,'grades'),d.grades||{});
+  save(nbKeyOf(id,'flags'),d.flags||{});
   if(d.settings)Object.assign(DB.settings,{theme:d.settings.theme||DB.settings.theme,model:d.settings.model||DB.settings.model,useGemini:d.settings.useGemini!==undefined?d.settings.useGemini:DB.settings.useGemini});
   saveSettings();applyTheme();switchNotebook(id);
   toast('「'+name+'」として取り込みました');
@@ -2620,6 +2785,7 @@ function bindUI(){
   $('#btnExpandAll').addEventListener('click',()=>$$('#contentArea details').forEach(d=>d.open=true));
   $('#btnCollapseAll').addEventListener('click',()=>$$('#contentArea details').forEach(d=>d.open=false));
   $('#btnAddCat').addEventListener('click',()=>openCatForm(null));
+  $('#btnFlagFilter').addEventListener('click',toggleFlagFilter);
   $('#btnBulkImport').addEventListener('click',openBulkImport);
   $('#tocToggle').addEventListener('click',()=>$('#toc').classList.add('open'));
   $('#tocClose').addEventListener('click',closeTocDrawer);
@@ -2635,8 +2801,10 @@ function bindUI(){
     const cb=$('#qUseAI');
     const useAI=!!(cb&&cb.checked&&!cb.disabled);
     if(cb&&!cb.disabled){DB.settings.quizAI=cb.checked;saveSettings();}
+    const fo=$('#qFlagOnly');DB.ui.quizFlagOnly=!!(fo&&fo.checked);saveUI();
     startQuiz(cats,segValue('#qCountSeg'),'normal',null,useAI);
   });
+  const fo=$('#qFlagOnly');if(fo)fo.addEventListener('change',()=>{DB.ui.quizFlagOnly=fo.checked;saveUI();});
   $('#btnStartReview').addEventListener('click',()=>{
     if(QZ.active&&!confirm('進行中のセッションがあります。破棄して復習を始めますか？'))return;
     startReview(segValue('#rCountSeg'));

@@ -626,6 +626,10 @@
             <span class="lab">階層数</span>
             <div class="steps" id="steps"></div>
           </div>
+          <div class="depth-ctrl">
+            <span class="lab">分岐数</span>
+            <div class="steps" id="branches"></div>
+          </div>
           <div class="spacer"></div>
           <button class="gen-btn" id="genBtn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5L13 3z"/></svg>
@@ -657,8 +661,9 @@
    問いの構造ツリー — single-file app (Gemini)
    ============================================================ */
 
-const LS = { KEY:"qtree_apikey", MODEL:"qtree_model", HIST:"qtree_history", MODE:"qtree_mode" };
+const LS = { KEY:"qtree_apikey", MODEL:"qtree_model", HIST:"qtree_history", MODE:"qtree_mode", BRANCH:"qtree_branch" };
 const MAX_DEPTH = 5, DEFAULT_DEPTH = 3;
+const BRANCH_OPTIONS = [3,4,5,6,8], DEFAULT_BRANCH = 4;
 const ENDPOINT = m => `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`;
 
 const MODES = {
@@ -691,6 +696,7 @@ function M(){ return MODES[state.mode]||MODES.question; }
 
 let state = {
   depth: DEFAULT_DEPTH,
+  branch: DEFAULT_BRANCH, // max children per node
   mode: "question",    // 'question' | 'factor'
   tree: null,          // array of nodes
   topic: "",           // root question / theme
@@ -729,6 +735,8 @@ function loadSettings(){
   if(![...$("#model").options].some(o=>o.value===m)){ $("#model").value="gemini-2.5-flash"; }
   const savedMode = localStorage.getItem(LS.MODE);
   if(savedMode && MODES[savedMode]) state.mode = savedMode;
+  const savedBranch = parseInt(localStorage.getItem(LS.BRANCH),10);
+  if(BRANCH_OPTIONS.includes(savedBranch)) state.branch = savedBranch;
   renderKeyState(k);
 }
 function renderKeyState(k){
@@ -801,6 +809,15 @@ function buildSteps(){
     wrap.appendChild(b);
   }
 }
+function buildBranches(){
+  const wrap=$("#branches"); wrap.innerHTML="";
+  BRANCH_OPTIONS.forEach(n=>{
+    const b=el("button","step"+(n===state.branch?" sel":""));
+    b.textContent=n;
+    b.onclick=()=>{ state.branch=n; localStorage.setItem(LS.BRANCH,n); buildBranches(); };
+    wrap.appendChild(b);
+  });
+}
 
 /* ---------- Tree-type (mode) toggle ---------- */
 function buildModes(){
@@ -862,6 +879,7 @@ let recog=null, recording=false;
 /* ============================================================
    Gemini call + dynamic depth schema
    ============================================================ */
+function branchMax(){ return state.branch||DEFAULT_BRANCH; }
 function nodeSchema(d){
   if(d<=1){
     return { type:"object", properties:{ question:{type:"string"} }, required:["question"], propertyOrdering:["question"] };
@@ -870,7 +888,7 @@ function nodeSchema(d){
     type:"object",
     properties:{
       question:{type:"string"},
-      children:{ type:"array", minItems:2, maxItems:4, items:nodeSchema(d-1) }
+      children:{ type:"array", minItems:2, maxItems:branchMax(), items:nodeSchema(d-1) }
     },
     required:["question","children"],
     propertyOrdering:["question","children"]
@@ -879,7 +897,7 @@ function nodeSchema(d){
 function rootSchema(d){
   return {
     type:"object",
-    properties:{ questions:{ type:"array", minItems:2, maxItems:4, items:nodeSchema(d) } },
+    properties:{ questions:{ type:"array", minItems:2, maxItems:branchMax(), items:nodeSchema(d) } },
     required:["questions"],
     propertyOrdering:["questions"]
   };
@@ -897,7 +915,7 @@ function buildPrompt(theme,d,premises){
 # ルール
 - すべてのノードは必ず疑問文で記述する（例:「〜は何か？」「〜はどの程度か？」「なぜ〜なのか？」）。体言止め・名詞句は禁止。
 - 親の問いに答えるために解くべき下位の問いへと分解する。下位の問いをすべて解けば、親の問いに答えられる関係にする。
-- 各階層の分岐数は2〜4個。MECEを保てる自然な数を選ぶ。数合わせのために不自然な問いを足したり削ったりしない。
+- 各階層の分岐数は2〜${branchMax()}個。MECEを保てる自然な数を選ぶ。数合わせのために不自然な問いを足したり削ったりしない。
 - 同じ親を持つ兄弟の問いは、粒度・抽象度をそろえ、互いに重複させない。
 - ちょうど ${d} 階層の深さまで展開する（お題自身は階層に数えない）。すべての枝を ${d} 階層まで一律に展開する。
 - 日本語で、簡潔かつ具体的な問いにする。
@@ -914,7 +932,7 @@ function buildFactorPrompt(theme,d,premises){
 - 各ノードは、構成要素・要因・原因を表す簡潔な名詞句（体言止め）で書く。疑問文にはしない。
 - 親を、それを構成する下位の要素・要因へ MECE に分解する（漏れなく・重複なく）。下位をすべて合わせると、親を過不足なく説明できる関係にする。
 - 分解の軸は「全体を構成要素に分ける」「結果を原因・要因に分ける」「指標を掛け算・足し算の因数に分ける」など。ただし同じ親の直下では一貫した1つの軸で分ける。
-- 各階層の分岐数は2〜4個。MECEを保てる自然な数を選ぶ。兄弟は粒度・抽象度をそろえ、互いに重複させない。
+- 各階層の分岐数は2〜${branchMax()}個。MECEを保てる自然な数を選ぶ。兄弟は粒度・抽象度をそろえ、互いに重複させない。
 - ちょうど ${d} 階層の深さまで展開する（お題自身は階層に数えない）。すべての枝を ${d} 階層まで一律に展開する。
 - 日本語で、簡潔かつ具体的に。
 - 下記の前提がある場合は、それに沿って分解の範囲・粒度を具体化する。
@@ -964,7 +982,7 @@ function buildDivePrompt(parentText,n){
 # ルール
 - 各ノードは、構成要素・要因・原因を表す簡潔な名詞句（体言止め）で書く。疑問文にはしない。
 - 親を、それを構成する下位の要素へ MECE に分解する（漏れなく・重複なく）。同じ親の直下では一貫した1つの軸で分ける。
-- 各階層の分岐数は2〜4個。兄弟は粒度・抽象度をそろえ、重複させない。
+- 各階層の分岐数は2〜${branchMax()}個。兄弟は粒度・抽象度をそろえ、重複させない。
 - ちょうど ${n} 階層の深さまで一律に展開する（親要素自身は階層に数えない）。
 - 日本語で簡潔かつ具体的に。
 
@@ -977,7 +995,7 @@ ${parentText}`;
 # ルール
 - すべてのノードは必ず疑問文で記述する。体言止め・名詞句は禁止。
 - 親の問いに答えるために解くべき下位の問いへと分解する。
-- 各階層の分岐数は2〜4個。MECEを保てる自然な数を選ぶ。
+- 各階層の分岐数は2〜${branchMax()}個。MECEを保てる自然な数を選ぶ。
 - 兄弟の問いは粒度をそろえ、重複させない。
 - ちょうど ${n} 階層の深さまで一律に展開する（親の問い自身は階層に数えない）。
 - 日本語で簡潔かつ具体的に。
@@ -993,7 +1011,7 @@ async function postGemini(prompt,schema){
   const model=$("#model").value;
   const body={
     contents:[{role:"user",parts:[{text:prompt}]}],
-    generationConfig:{ responseMimeType:"application/json", responseSchema:schema }
+    generationConfig:{ responseMimeType:"application/json", responseSchema:schema, maxOutputTokens:65535 }
   };
   let res;
   try{
@@ -1028,7 +1046,12 @@ async function postGemini(prompt,schema){
   const finish=cand?.finishReason;
   if(finish==="SAFETY"||finish==="PROHIBITED_CONTENT"){ const e=new Error("安全性フィルタにより生成がブロックされました。表現を変えて試してください。"); e.kind="safety"; throw e; }
   const text=cand?.content?.parts?.map(p=>p.text).filter(Boolean).join("")||"";
+  if(finish==="MAX_TOKENS" && text.length<20){
+    const e=new Error("出力が長すぎて上限に達しました。階層数または分岐数を減らして再試行してください（例：階層を1つ下げる／分岐数を小さくする）。"); e.kind="toolong"; throw e;
+  }
   if(!text){ const e=new Error("空の応答が返りました。もう一度試してください。"); e.kind="empty"; throw e; }
+  // truncated but has partial text: let parseObj attempt; if it fails, treat as too-long
+  if(finish==="MAX_TOKENS"){ try{ parseObj(text); }catch(_){ const e=new Error("出力が長すぎて途中で切れました。階層数または分岐数を減らして再試行してください。"); e.kind="toolong"; throw e; } }
   return text;
 }
 
@@ -1439,7 +1462,7 @@ async function copyMarkdown(){
 }
 function downloadJson(){
   const payload={ version:2, type:state.mode==="factor"?"factor-tree":"question-tree", mode:state.mode,
-                  topic:state.topic, depth:state.depth, premises:state.premises||[],
+                  topic:state.topic, depth:state.depth, branch:state.branch, premises:state.premises||[],
                   createdAt:new Date().toISOString(), tree:stripTree(state.tree) };
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob);
@@ -1459,7 +1482,7 @@ function writeHistArr(a){ try{ localStorage.setItem(LS.HIST,JSON.stringify(a)); 
 function saveHistory(){
   if(!state.tree)return;
   const arr=loadHistArr();
-  const rec={ id:state.activeHistId||uid(), topic:state.topic, depth:state.depth, mode:state.mode,
+  const rec={ id:state.activeHistId||uid(), topic:state.topic, depth:state.depth, mode:state.mode, branch:state.branch,
               premises:state.premises||[], updatedAt:Date.now(), tree:stripTree(state.tree) };
   if(state.activeHistId){
     const i=arr.findIndex(r=>r.id===state.activeHistId);
@@ -1500,10 +1523,11 @@ function openHistory(id){
   const arr=loadHistArr();
   const r=arr.find(x=>x.id===id); if(!r)return;
   state.topic=r.topic; state.depth=r.depth; state.mode=MODES[r.mode]?r.mode:"question"; state.tree=r.tree.map(normalize);
+  if(BRANCH_OPTIONS.includes(r.branch)) state.branch=r.branch;
   state.activeHistId=id; state.lastError=null; state.loading=false;
   state.view="tree"; state.report=null; state.modal=null; state.optionsCache={};
   state.premises=Array.isArray(r.premises)?r.premises:[];
-  topicEl.value=r.topic; autosize(); buildSteps(); buildModes(); applyModeToTopicPlaceholder();
+  topicEl.value=r.topic; autosize(); buildSteps(); buildBranches(); buildModes(); applyModeToTopicPlaceholder();
   renderCanvas(); renderHistory();
   $("#canvas").scrollTop=0;
 }
@@ -1921,6 +1945,7 @@ summary{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);
 }
 loadSettings();
 buildSteps();
+buildBranches();
 buildModes();
 applyModeToTopicPlaceholder();
 autosize();

@@ -58,10 +58,10 @@ mark{background:var(--mark);color:var(--mark-ink);padding:0 2px;border-radius:3p
 .ts-search{display:flex;align-items:stretch;gap:8px}
 .ts-search .toc-toggle{flex-shrink:0;padding:0 13px;border-radius:10px}
 .ts-search .searchbox{flex:1;min-width:0}
-.ts-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.ts-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .ts-actions>*{flex-shrink:0}
 .ts-actions .ts-spacer{flex:1 1 0;min-width:0}
-.ts-actions .btn.sm{height:34px;padding:0 12px;border-radius:9px;gap:5px;font-size:13px;color:var(--ink2)}
+.ts-actions .btn.sm{height:34px;padding:0 10px;border-radius:9px;gap:4px;font-size:13px;color:var(--ink2)}
 .ts-actions .btn.sm svg{width:15px;height:15px}
 .ts-actions .btn.sm:hover{color:var(--ink);background:var(--surface2)}
 .brand{flex:1;min-width:0;font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.04em;display:flex;flex-direction:column;align-items:stretch;line-height:1.15}
@@ -167,7 +167,7 @@ mark{background:var(--mark);color:var(--mark-ink);padding:0 2px;border-radius:3p
 .merge-opt input{accent-color:var(--accent);width:18px;height:18px;flex-shrink:0}
 .merge-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
 .merge-cnt{flex-shrink:0}
-.lt-group button{border:none;background:var(--surface);color:var(--ink2);padding:0 13px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center}
+.lt-group button{border:none;background:var(--surface);color:var(--ink2);padding:0 11px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center}
 .lt-group button svg{width:16px;height:16px;display:block}
 .lt-group button:hover{background:var(--surface2);color:var(--ink)}
 .lt-group button+button{border-left:1px solid var(--line2)}
@@ -1375,7 +1375,7 @@ function updateFlagFilterBtn(){
   const n=flagCount();
   b.classList.toggle('on',!!DB.ui.flagOnly);
   b.setAttribute('title',DB.ui.flagOnly?'すべての章を表示':'フラグを立てた章のみ表示');
-  const lab=b.querySelector('.ff-label');if(lab)lab.textContent=DB.ui.flagOnly?`フラグのみ (${n})`:`フラグ${n?' ('+n+')':''}`;
+  const lab=b.querySelector('.ff-label');if(lab)lab.textContent=`フラグ${n?' '+n:''}`; /* 件数が増えても1行に収まるよう簡潔表示（絞込中は下のonスタイルで示す） */
 }
 function renderTermCard(t){
   const nq=quizzesOf(t.id).length;

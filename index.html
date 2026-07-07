@@ -226,6 +226,7 @@ details.term>summary:hover .term-name{color:var(--accent-ink)}
 details[open]>summary .tcaret{transform:rotate(90deg);color:var(--accent)}
 .term-body{padding:2px 4px 16px 23px}
 .term-def{white-space:pre-wrap}
+.mcode{white-space:normal;color:var(--accent-ink)}
 .kv-label{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--accent-ink);background:var(--accent-soft);border-radius:5px;padding:1px 8px;margin:10px 0 4px}
 .formula{font-family:var(--mono);font-size:14.5px;background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:8px;padding:10px 14px;margin:4px 0;white-space:pre-wrap;line-height:2;overflow-x:auto}
 .mfrac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em}
@@ -952,6 +953,8 @@ function mathToHTML(str){
       else if(c==='^'){i++;out+='<sup>'+arg()+'</sup>';}
       else if(c==='_'){i++;out+='<sub>'+arg()+'</sub>';}
       else if(c==='$'){i++;} /* $…$ はインライン数式の区切り記号。表示せず中身だけ数式として扱う */
+      else if(c==='$'){i++;} /* $…$ はインライン数式の区切り記号。表示せず中身だけ数式として扱う */
+      else if(c==='`'){i++;} /* バッククォートも数式の区切りとして無視（生の`が残らないように） */
       else{out+=esc(c);i++;}
     }
     return out;
@@ -959,13 +962,29 @@ function mathToHTML(str){
   return convert(String(str==null?'':str));
 }
 function fmtMath(raw){return mathToHTML(raw);}
-/* 定義・補足の表示: $…$ をインライン数式として描画し、それ以外はキーポイントを<mark>で強調 */
+/* 定義・補足の表示: $…$ と `…`（バッククォート）をインライン数式として描画し、それ以外はキーポイントを<mark>で強調・簡易マークダウン整形 */
 function fmtDef(raw,kps){
-  const parts=String(raw==null?'':raw).split(/(\$[^$]*\$)/g);
+  const parts=String(raw==null?'':raw).split(/(\$[^$]*\$|`[^`]*`)/g);
   return parts.map(seg=>{
     if(seg.length>=2&&seg[0]==='$'&&seg[seg.length-1]==='$')return mathToHTML(seg.slice(1,-1));
+    if(seg.length>=2&&seg[0]==='`'&&seg[seg.length-1]==='`')return '<span class="mcode">'+mathToHTML(seg.slice(1,-1))+'</span>';
     return proseSeg(seg,kps);
   }).join('');
+}
+function miniMath(x){
+  x=x.replace(/\^\{([^{}]*)\}/g,'<sup>$1</sup>').replace(/_\{([^{}]*)\}/g,'<sub>$1</sub>');
+  x=x.replace(/\^(-?[0-9A-Za-z])/g,'<sup>$1</sup>').replace(/_(-?[0-9A-Za-z])/g,'<sub>$1</sub>');
+  x=x.replace(/\\([A-Za-z]+)/g,(m,n)=>MATH_SYM[n]!==undefined?MATH_SYM[n]:n);
+  return x;
+}
+/* 区切り($…$や`…`)が無い生のLaTeX（\frac ^2 等）も、prose中で数式描画する */
+function inlineMathProse(s){
+  s=s.replace(/\\[dt]?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g,(m,a,b)=>'<span class="mfrac"><span class="mnum">'+miniMath(a)+'</span><span class="mden">'+miniMath(b)+'</span></span>');
+  s=s.replace(/\\sqrt\s*\{([^{}]*)\}/g,(m,a)=>'√<span class="msqrt">'+miniMath(a)+'</span>');
+  s=s.replace(/\^\{([^{}]*)\}/g,(m,a)=>'<sup>'+miniMath(a)+'</sup>').replace(/_\{([^{}]*)\}/g,(m,a)=>'<sub>'+miniMath(a)+'</sub>');
+  s=s.replace(/\^(-?[0-9A-Za-z])/g,'<sup>$1</sup>'); /* 素の上付き ^2 など（下付きは識別子の誤変換を避けるため素の_は変換しない） */
+  s=s.replace(/\\([A-Za-z]+)/g,(m,n)=>MATH_SYM[n]!==undefined?MATH_SYM[n]:n); /* 残ったギリシャ文字・記号コマンド */
+  return s;
 }
 function proseSeg(seg,kps){
   let s=esc(seg);
@@ -976,7 +995,9 @@ function proseSeg(seg,kps){
     const e=esc(kp).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
     s=s.replace(new RegExp(e,'g'),m=>'\u0001'+m+'\u0002');
   });
-  s=s.replace(/\^\{([^}]+)\}/g,'<sup>$1</sup>').replace(/_\{([^}]+)\}/g,'<sub>$1</sub>');
+  s=inlineMathProse(s);
+  s=s.replace(/(^|\n)([ \t　]*)[*・][ \t]+/g,'$1$2・ '); /* 行頭の * や ・ の箇条書きを・に整える */
+  s=s.replace(/\*\*([^*\n]+?)\*\*/g,'<strong>$1</strong>'); /* **強調** を太字に */
   s=s.replace(/\u0001/g,'<mark>').replace(/\u0002/g,'</mark>');
   return s;
 }
@@ -1835,7 +1856,7 @@ async function aiGenAndShow(term,type,bg,instr){
 async function geminiDeepDive(term,instr){
   const payload={name:term.name,definition:term.def,formula:term.formula||'',note:term.note||''};
   const extra=(instr&&instr.trim())?('\n\n【ユーザーからの観点・指示（正確さを保った上で反映）】\n'+instr.trim()):'';
-  const sys='あなたは学習者の理解を深めるための解説を書くアシスタントです。与えた用語の既存の説明を「充足（補強）」する追加解説を作成してください。次のJSONだけで返す（前置き・コードフェンス禁止）:\n{"text":"追加解説。既存説明と過度に重複せず、背景・直感的なイメージ・具体例・注意点・関連概念との違いなどを簡潔に。事実の正確さを最優先。日本語。数式は ^{ } で上付き、_{ } で下付き"}\n条件: 誤りを書かない／与えた情報と確立された一般知識に基づく／冗長にしすぎない（目安200〜500字。指示があればそれに従う）。';
+  const sys='あなたは学習者の理解を深めるための解説を書くアシスタントです。与えた用語の既存の説明を「充足（補強）」する追加解説を作成してください。次のJSONだけで返す（前置き・コードフェンス禁止）:\n{"text":"追加解説。既存説明と過度に重複せず、背景・直感的なイメージ・具体例・注意点・関連概念との違いなどを簡潔に。事実の正確さを最優先。日本語。"}\n数式・記号の書き方（重要）: 数式や変数は必ず $…$ で囲む（例: $\\frac{1}{2}(m-D_w)^{2}$、$D_w \\ge m$、変数は $m$ のように）。上付きは ^{ }、下付きは _{ } を使う。バッククォート(`)やコードフェンス、Markdownの見出し(#)は使わない。強調は最小限。箇条書きは行頭「・」を使う。\n条件: 誤りを書かない／与えた情報と確立された一般知識に基づく／冗長にしすぎない（目安200〜500字。指示があればそれに従う）。';
   const r=await callGemini('次の用語の理解を深める追加解説を作成してください:\n'+JSON.stringify(payload)+extra,sys);
   if(!r||typeof r.text!=='string'||!r.text.trim())throw new Error('生成結果の形式が不正でした');
   return r.text.trim();
